@@ -33,6 +33,14 @@ from app.tracing import Tracer
 
 LANES = ("fast", "deep", "judge")
 
+# Nemotron reasoning models (lightning-30b among them) emit `reasoning_content`
+# BEFORE `content`, and both draw on max_tokens. Ask for 200 and the reasoning
+# consumes the whole budget: the call returns HTTP 200 with content=None and
+# finish_reason="length". That looks exactly like a failure to a caller, so a
+# working provider would silently degrade every agent to its fallback path.
+# This floor keeps enough budget for an answer after the thinking.
+MIN_MAX_TOKENS = 1200
+
 
 @dataclass
 class ChatResult:
@@ -134,6 +142,7 @@ class NightshiftClient:
             raise ValueError(f"lane must be one of {LANES}, got {lane!r}")
 
         model = self.settings.model_for_lane(lane)
+        max_tokens = max(max_tokens, MIN_MAX_TOKENS)
         started = time.monotonic()
 
         if self.settings.sample_mode:
@@ -181,6 +190,20 @@ class NightshiftClient:
                 payload = response.json()
                 text = _first_message(payload)
                 served = payload.get("model") or model
+
+                if not text:
+                    # 200 with no content. Almost always a reasoning model that
+                    # spent the budget thinking. Say so, rather than reporting a
+                    # generic failure that sends someone hunting the wrong bug.
+                    choice = (payload.get("choices") or [{}])[0]
+                    reason = choice.get("finish_reason")
+                    thought = bool((choice.get("message") or {}).get("reasoning_content"))
+                    last_reason = (
+                        f"empty_content(finish_reason={reason}"
+                        + (", reasoning_content present" if thought else "")
+                        + f", max_tokens={max_tokens})"
+                    )
+                    raise ValueError(last_reason)
                 result = ChatResult(
                     text, served, lane, elapsed_seconds=time.monotonic() - started, raw=payload
                 )
@@ -299,4 +322,7 @@ def _first_message(payload: dict[str, Any]) -> str | None:
         return content
     if isinstance(content, list):  # some runtimes return content parts
         return "".join(part.get("text", "") for part in content if isinstance(part, dict))
+    # A reasoning model's `reasoning_content` is deliberately NOT used as the
+    # answer: it is the model thinking aloud, not its reply, and feeding it to a
+    # JSON parser downstream would be worse than falling back cleanly.
     return None
