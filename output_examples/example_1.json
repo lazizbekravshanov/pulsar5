@@ -4,7 +4,7 @@
     "status": "escalated",
     "output": {
       "plan": {
-        "plan_id": "plan-2026-10-26T12:27:18Z-47",
+        "plan_id": "plan-2026-10-26T20:21:40Z-47",
         "replay_hour": "2022-09-26T12:00Z",
         "actions": [
           {
@@ -432,7 +432,7 @@
             "rationale": "Closest logistics point to the shelters being opened"
           }
         ],
-        "summary": "Advisory 15: evacuate 11 zones, open 14 shelters (23556 spaces for ~14184 expected evacuees), stage at 4 sites",
+        "summary": "Advisory 15: evacuate 11 zones, open 14 shelters (23556 spaces for ~14184 expected evacuees), stage at 4 sites. Memory applied: Seen in 2 runs: Plan at 2022-09-26T12:00Z was refused for: distant_vulnerable_zone, missed",
         "produced_by": "Planner"
       },
       "escalations": [
@@ -540,14 +540,19 @@
           {
             "code": "distant_vulnerable_zone",
             "message": "Zone FL-071-0500 (Lee) scores 0.83 on social vulnerability but lies 48 mi outside the current cone. No evacuation is warranted yet; pre-positioning there is an operator call",
-            "action_id": null
+            "action_id": null,
+            "zone_id": null
           }
         ],
         "instructions": [],
         "confidence": 0.78,
         "reviewed_by_model": null
       },
-      "memory_recalled": []
+      "memory_recalled": [
+        "Seen in 2 runs: Plan at 2022-09-26T12:00Z was refused for: distant_vulnerable_zone, missed_vulnerability, unsupported_claim",
+        "Plan at 2022-09-26T12:00Z was refused for: distant_vulnerable_zone, high_vulnerability_zone_unaddressed",
+        "Plan at 2022-09-26T12:00Z was refused for: distant_vulnerable_zone, missed_vulnerability, unsupported_claim"
+      ]
     },
     "agents": [
       {
@@ -582,8 +587,11 @@
       }
     ],
     "iterations": 2,
-    "models_used": [
-      "meterless/auto"
+    "models_used": [],
+    "models_attempted": [
+      "nvidia/nemotron-3.5-lightning-30b-a3b",
+      "nvidia/nemotron-3-ultra-550b-a55b",
+      "nvidia/nemotron-3.5-bolt-e4b"
     ],
     "engines_used": [
       "hmem",
@@ -591,7 +599,7 @@
       "world_model"
     ],
     "zetaris_queries": 7,
-    "trace_id": "8162c476-e596-4214-b680-7dc9fca1bc32",
+    "trace_id": "b8ede2a9-69bd-480c-a4a2-44f412ca51f9",
     "log_file": "/Users/kali/pet/pulsar5/logs/trace-ian-landfall-minus-48h.jsonl",
     "execution_time_seconds": 0.004,
     "sample_mode": true,
@@ -872,7 +880,7 @@
       "ACT-047"
     ],
     "revised_plan": {
-      "plan_id": "plan-2026-10-26T12:27:18Z-43",
+      "plan_id": "plan-2026-10-26T20:21:40Z-43",
       "replay_hour": "2022-09-27T21:00Z",
       "actions": [
         {
@@ -1268,11 +1276,11 @@
           "rationale": "Closest logistics point to the shelters being opened"
         }
       ],
-      "summary": "Advisory 23: evacuate 9 zones, open 14 shelters (18602 spaces for ~13014 expected evacuees), stage at 4 sites",
+      "summary": "Advisory 23: evacuate 9 zones, open 14 shelters (18602 spaces for ~13014 expected evacuees), stage at 4 sites. Memory applied: Seen in 2 runs: Plan at 2022-09-26T12:00Z was refused for: distant_vulnerable_zone, missed",
       "produced_by": "Planner"
     },
     "previous_plan": {
-      "plan_id": "plan-2026-10-26T12:27:18Z-47",
+      "plan_id": "plan-2026-10-26T20:21:40Z-47",
       "replay_hour": "2022-09-26T12:00Z",
       "actions": [
         {
@@ -1700,7 +1708,7 @@
           "rationale": "Closest logistics point to the shelters being opened"
         }
       ],
-      "summary": "Advisory 15: evacuate 11 zones, open 14 shelters (23556 spaces for ~14184 expected evacuees), stage at 4 sites",
+      "summary": "Advisory 15: evacuate 11 zones, open 14 shelters (23556 spaces for ~14184 expected evacuees), stage at 4 sites. Memory applied: Seen in 2 runs: Plan at 2022-09-26T12:00Z was refused for: distant_vulnerable_zone, missed",
       "produced_by": "Planner"
     },
     "diff": {
@@ -2125,7 +2133,7 @@
         "requires": "human_approval"
       }
     ],
-    "trace_id": "8162c476-e596-4214-b680-7dc9fca1bc32",
-    "execution_time_seconds": 0.003
+    "trace_id": "b8ede2a9-69bd-480c-a4a2-44f412ca51f9",
+    "execution_time_seconds": 0.004
   }
 }

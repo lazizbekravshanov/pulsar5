@@ -183,9 +183,16 @@ class NightshiftClient:
                     json=body,
                 )
                 if response.status_code >= 400:
-                    # 502 here usually means Nightshift reached the provider and the
-                    # provider refused the key. Worth distinguishing in the trace.
-                    last_reason = f"http_{response.status_code}"
+                    # Nightshift wraps the provider's own error in the body. Keep it:
+                    # a bare "http_502" cannot tell a refused key from a rate limit,
+                    # and those need completely different fixes.
+                    detail = ""
+                    try:
+                        err = response.json().get("error") or {}
+                        detail = str(err.get("code") or "") or str(err.get("message") or "")
+                    except Exception:
+                        detail = response.text[:160]
+                    last_reason = f"http_{response.status_code}" + (f": {detail[:200]}" if detail else "")
                     raise httpx.HTTPStatusError(last_reason, request=response.request, response=response)
                 payload = response.json()
                 text = _first_message(payload)

@@ -132,6 +132,16 @@ class Planner(Agent):
                 params.opening_budget = max(params.opening_budget, 2)
                 reasons.append("open shelters to receive the ordered evacuations")
 
+        # The Critic looks wider than the Simulator, so some findings exist only
+        # in the critique. Without this the loop re-finds the same uncovered zone
+        # every iteration, burns its whole budget and escalates something it could
+        # simply have fixed.
+        for finding in (critique.findings if critique else []):
+            if finding.code == "high_vulnerability_zone_unaddressed" and finding.zone_id:
+                if finding.zone_id not in params.forced_zones:
+                    params.forced_zones.append(finding.zone_id)
+                    reasons.append(f"cover {finding.zone_id}, flagged by the Critic")
+
         for instruction in (critique.instructions if critique else []):
             reasons.append(instruction)
             lowered = instruction.lower()

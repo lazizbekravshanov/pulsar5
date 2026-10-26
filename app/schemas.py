@@ -89,6 +89,9 @@ class CritiqueFinding(BaseModel):
     code: str
     message: str
     action_id: str | None = None
+    # Set when the finding is about a specific zone, so the Planner can act on it
+    # directly instead of trying to parse it back out of the message.
+    zone_id: str | None = None
 
 
 class Critique(BaseModel):

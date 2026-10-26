@@ -45,7 +45,13 @@ DEFAULT_STALENESS_TOLERANCE_HOURS = 12
 #                                 data-currency gap for the operator to weigh
 #   distant_vulnerable_zone     - a policy call about pre-positioning outside the
 #                                 cone, which belongs to the operator
+#   advisory:*                  - a model finding the Planner has no mechanism
+#                                 to act on (see _model_findings)
 UNFIXABLE_CODES = {"regional_capacity_shortfall", "stale_evidence", "distant_vulnerable_zone"}
+
+
+def _is_unfixable(code: str) -> bool:
+    return code in UNFIXABLE_CODES or code.startswith("advisory:")
 
 
 def _parse_ts(value: str) -> datetime | None:
@@ -186,6 +192,7 @@ class Critic(Agent):
                                 f"vulnerability and sits {miles:.0f} mi from the cone, inside the "
                                 f"{EVAC_BUFFER_MILES:.0f} mi planning buffer, with no action"
                             ),
+                            zone_id=zone_id,
                         )
                     )
                     instructions.append(
@@ -238,23 +245,38 @@ class Critic(Agent):
         model_confidence: float | None = None
         parsed = chat.json() if chat.ok else None
         if isinstance(parsed, dict):
+            known_actions = {a.action_id for a in plan.actions}
+            known_zones = {z["entity_id"] for z in self.world.entities("zone")}
             for raw in parsed.get("findings", []) or []:
-                if isinstance(raw, dict) and raw.get("message"):
-                    findings.append(
-                        CritiqueFinding(
-                            code=str(raw.get("code", "judge_finding"))[:48],
-                            message=str(raw["message"])[:400],
-                            action_id=(str(raw["action_id"]) if raw.get("action_id") else None),
-                        )
+                if not (isinstance(raw, dict) and raw.get("message")):
+                    continue
+                code = str(raw.get("code", "judge_finding"))[:48]
+                action_id = str(raw["action_id"]) if raw.get("action_id") else None
+                zone_id = str(raw["zone_id"]) if raw.get("zone_id") else None
+
+                # A judge asked to review will almost always find *something*, so
+                # an unbounded one never lets the loop converge and every plan
+                # escalates — which teaches the operator to ignore the gate. A
+                # model finding blocks only when it names an action or zone the
+                # Planner can actually act on. Anything else is a real
+                # observation for the human, not a revision instruction.
+                actionable = (action_id in known_actions) or (zone_id in known_zones)
+                findings.append(
+                    CritiqueFinding(
+                        code=code if actionable else f"advisory:{code}",
+                        message=str(raw["message"])[:400],
+                        action_id=action_id if action_id in known_actions else None,
+                        zone_id=zone_id if zone_id in known_zones else None,
                     )
+                )
             for raw in parsed.get("instructions", []) or []:
                 if isinstance(raw, str) and raw.strip():
                     instructions.append(raw.strip()[:300])
             if isinstance(parsed.get("confidence"), (int, float)):
                 model_confidence = max(0.0, min(1.0, float(parsed["confidence"])))
 
-        fixable = [f for f in findings if f.code not in UNFIXABLE_CODES]
-        unfixable = [f for f in findings if f.code in UNFIXABLE_CODES]
+        fixable = [f for f in findings if not _is_unfixable(f.code)]
+        unfixable = [f for f in findings if _is_unfixable(f.code)]
 
         # A plan is accepted when nothing remains that the Planner could fix.
         # Unfixable resource gaps still travel with the plan, as findings, and
