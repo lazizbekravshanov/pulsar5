@@ -33,4 +33,4 @@ SELECT
     warning.issue        AS issued_at,
     warning.expire       AS expires_at
 FROM iem_sbw_raw
-LATERAL VIEW explode(sbws) exploded AS warning;
+LATERAL VIEW explode(sbws) AS warning;

@@ -27,7 +27,7 @@ SELECT
     site.lon            AS lon,
     site.truck_capacity AS truck_capacity
 FROM facilities_raw
-LATERAL VIEW explode(staging_sites) exploded AS site;
+LATERAL VIEW explode(staging_sites) AS site;
 
 CREATE LIGHTNING REST TABLE road_events_raw FROM PULSAR5_REST REQUEST(
     endpoint "${RAW_BASE}/data/replay/road_events.json",

@@ -64,6 +64,17 @@ def raw_base(explicit: str | None) -> str:
     return f"https://raw.githubusercontent.com/{match['owner']}/{match['repo']}/main"
 
 
+def _already_exists(message: str) -> bool:
+    """True when the instance is telling us the object is already registered.
+
+    Lightning SQL has no IF NOT EXISTS for CREATE SCHEMASTORE CONTAINER, so a
+    second run of a registration file fails on an object the first run created.
+    That is not a real failure, and re-running registration has to be safe.
+    """
+    lowered = message.lower()
+    return "already exists" in lowered or "already registered" in lowered
+
+
 def split_statements(sql: str) -> list[str]:
     """One statement per element, comments stripped.
 
@@ -84,6 +95,11 @@ def main() -> int:
     parser.add_argument("--only", help="run just one SQL file, by stem")
     parser.add_argument("--raw-base", help="raw GitHub base URL for this repository")
     parser.add_argument("--continue-on-error", action="store_true", help="keep going past a failure")
+    parser.add_argument(
+        "--skip-exists",
+        action="store_true",
+        help="treat 'already exists' as success (CREATE SCHEMASTORE CONTAINER has no IF NOT EXISTS)",
+    )
     args = parser.parse_args()
 
     settings = load_settings()
@@ -123,10 +139,18 @@ def main() -> int:
                     result = client.run_sql(statement, query_name=f"{path.stem}#{index}")
                     print(f"  [{index}] ok ({result.row_count} rows): {headline}")
                 except Exception as exc:
+                    message = str(exc)
+                    if args.skip_exists and _already_exists(message):
+                        print(f"  [{index}] exists, skipped: {headline}")
+                        continue
                     print(f"  [{index}] FAILED: {headline}\n        {type(exc).__name__}: {exc}")
                     failures.append((f"{path.name}#{index}", f"{type(exc).__name__}: {exc}"))
                     if not args.continue_on_error:
-                        print("\nStopping. Re-run with --continue-on-error to push past this.")
+                        hint = (
+                            "\nStopping. Re-run with --continue-on-error to push past this"
+                            + (", or --skip-exists if these objects are already registered." if _already_exists(message) else ".")
+                        )
+                        print(hint)
                         return 1
             print()
 

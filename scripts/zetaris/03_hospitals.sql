@@ -26,5 +26,5 @@ SELECT
     feature.attributes.LATITUDE   AS lat,
     feature.attributes.LONGITUDE  AS lon
 FROM hospitals_raw
-LATERAL VIEW explode(features) exploded AS feature
+LATERAL VIEW explode(features) AS feature
 WHERE feature.attributes.COUNTY IN ('LEE', 'CHARLOTTE', 'SARASOTA', 'PINELLAS', 'HILLSBOROUGH');

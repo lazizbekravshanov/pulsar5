@@ -36,5 +36,5 @@ SELECT
     feature.attributes.longitude             AS lon,
     feature.attributes.last_updated          AS updated_at
 FROM shelters_nss_raw
-LATERAL VIEW explode(features) exploded AS feature
+LATERAL VIEW explode(features) AS feature
 WHERE feature.attributes.county IN ('Lee', 'Charlotte', 'Sarasota', 'Pinellas', 'Hillsborough');

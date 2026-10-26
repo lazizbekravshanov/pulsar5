@@ -22,4 +22,4 @@ SELECT
     declaration.incidentType      AS incident_type,
     declaration.designatedArea    AS county
 FROM fema_declarations_raw
-LATERAL VIEW explode(DisasterDeclarationsSummaries) exploded AS declaration;
+LATERAL VIEW explode(DisasterDeclarationsSummaries) AS declaration;
