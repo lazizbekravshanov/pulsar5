@@ -78,7 +78,7 @@ Open http://localhost:8000 and a terminal side by side.
 
 | # | Time | On screen | Say |
 |---|---|---|---|
-| 1 | 0:00–0:20 | Slide 2 (the problem) or the UI at rest | "A county emergency manager, the day before landfall. Seven systems, different refresh rates, and decisions that can't be taken back." |
+| 1 | 0:00–0:20 | Slide 6 (*The forecast was not wrong*) | "Hurricane Ian killed 156 people and cost $112.9 billion. Storm surge killed 41 — and 36 of those were in one county. But the National Hurricane Center's own report says the cone contained the landfall location for every advisory cycle. The data was there the whole time. The plans built on it went stale." |
 | 2 | 0:20–0:35 | Terminal: `curl -X POST localhost:8000/run -d @input_examples/example_1.json` | "Everything is reachable over HTTP — judges can curl it. This is advisory 15, five counties." |
 | 3 | 0:35–1:05 | UI: the map fills, plan appears on the right | "29 actions. Every one cites World Model fact ids. 11 held for a human, 18 auto-committed." |
 | 4 | 1:05–1:30 | Scroll the trace panel to the `reject_plan` line, then `accept_plan` | **The loop.** "First pass opens 3 shelters — 5,441 spaces against 14,184 evacuees. The Critic refuses at 0.56 and sends the shortfall back. Second pass reaches 23,556 and is accepted." |
@@ -87,6 +87,8 @@ Open http://localhost:8000 and a terminal side by side.
 | 7 | 2:00–2:35 | Click **Advisory 23 — track shifts south** | **The change of mind.** "27 beliefs change. 11 decisions invalidated, 36 preserved. Lee County enters, Hillsborough stands down. Sarasota was in both cones, so nothing touched it." |
 | 8 | 2:35–2:50 | Terminal: `./.venv/bin/python scripts/eval.py \| tail -20` | **The engines + scoreboard.** "35 perturbed scenarios. Zero unhandled violations, zero irreversible auto-commits, 3 of 3 correct abstentions. Markovian holds context flat across 24 steps." |
 | 9 | 2:50–3:00 | Slide 15 (the Lee County line) | "At advisory 15, with every forecast pointing at Tampa, it had already flagged Lee County to the operator. That's the Critic refusing to let a vulnerable area vanish — and handing the call to a human." |
+
+Every figure in shot 1 is sourced in [IMPACT-DATA.md](IMPACT-DATA.md), straight from the NHC post-storm report.
 
 ### Two warnings
 
