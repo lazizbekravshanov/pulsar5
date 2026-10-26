@@ -32,9 +32,11 @@ Three silent MP4s, 1920x1080, rendered and ready to drop into the edit. Sources 
 
 | File | Length | Drop at |
 |---|---|---|
-| `renders/title-card.mp4` | 4.5 s | 0:00, before you speak |
-| `renders/architecture.mp4` | 8.0 s | ~1:05, under the loop explanation |
-| `renders/stat-reveal.mp4` | 6.0 s | ~2:00, right after the track-shift click |
+| `renders/title-card.mp4` | 2.5 s | 0:00, before you speak |
+| `renders/architecture.mp4` | 5.0 s | ~1:05, under the loop explanation |
+| `renders/stat-reveal.mp4` | 4.0 s | ~2:00, right after the track-shift click |
+
+11.5 s of insert in a 180 s video. Deliberately tight: every second of animation is a second not showing the system actually working, which is the thing that wins this.
 
 They have no audio, so your narration runs straight over them. Re-render any of them with:
 
@@ -47,7 +49,7 @@ cp src/<name>.html index.html && npm run check && npx hyperframes render . -o re
 
 ## 0:00 – 0:18 · The problem
 
-**ON SCREEN:** `title-card.mp4` (4.5 s), then deck slide 6 (*The forecast was not wrong*).
+**ON SCREEN:** `title-card.mp4` (2.5 s), then deck slide 6 (*The forecast was not wrong*).
 
 > **SAY:** Hurricane Ian killed a hundred and fifty six people and cost a hundred and twelve billion dollars. Storm surge killed forty one, and thirty six of those were in one county.
 >
@@ -79,7 +81,7 @@ curl -X POST localhost:8000/run -H 'Content-Type: application/json' -d @input_ex
 
 ## 1:00 – 1:25 · The loop
 
-**ON SCREEN:** `architecture.mp4` (8 s) over the first half, then cut to the terminal or trace panel. Scroll to `reject_plan`, then `accept_plan`.
+**ON SCREEN:** `architecture.mp4` (5 s) over the first half, then cut to the terminal or trace panel. Scroll to `reject_plan`, then `accept_plan`.
 
 > **SAY:** This is the part I care about most. It is a loop, not a chain.
 >
@@ -109,7 +111,7 @@ curl -X POST localhost:8000/run -H 'Content-Type: application/json' -d @input_ex
 
 ## 1:55 – 2:30 · The change of mind
 
-**ON SCREEN:** Click **Advisory 23 — track shifts south**. Let the map redraw, then cut to `stat-reveal.mp4` (6 s) as you say the numbers.
+**ON SCREEN:** Click **Advisory 23 — track shifts south**. Let the map redraw, then cut to `stat-reveal.mp4` (4 s) as you say the numbers.
 
 > **SAY:** Now the world changes. Advisory twenty three arrives and the track moves south.
 >
