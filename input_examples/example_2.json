@@ -1,0 +1,11 @@
+{
+  "run_id": "ian-lee-charlotte-tight-supply",
+  "input": {
+    "scenario": "ian_2022",
+    "region": ["Lee", "Charlotte"],
+    "replay_hour": "2022-09-26T12:00Z",
+    "goal": "Two southern counties only, with a thin truck fleet. Prioritise the least mobile residents.",
+    "constraints": {"supply_trucks": 4, "staging_sites_max": 2}
+  },
+  "options": {"sample_mode": true, "max_iterations": 3}
+}

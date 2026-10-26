@@ -1,0 +1,13 @@
+{
+  "run_id": "ian-landfall-minus-48h",
+  "event": {
+    "type": "shelter_capacity",
+    "payload": {
+      "shelter_id": "S-071-2",
+      "capacity": 1500,
+      "current_occupancy": 1500,
+      "status": "at_capacity",
+      "updated_at": "2022-09-27T14:00Z"
+    }
+  }
+}

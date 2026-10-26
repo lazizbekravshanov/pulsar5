@@ -1,0 +1,106 @@
+{
+  "query_name": "hospitals_by_county",
+  "recorded_from": "scripts/build_replay.py",
+  "note": "SYNTHETIC HIFLD-shaped hospital records",
+  "columns": [
+    "hospital_id",
+    "hospital_name",
+    "county",
+    "beds",
+    "trauma_level",
+    "lat",
+    "lon"
+  ],
+  "rows": [
+    {
+      "hospital_id": "H-071-1",
+      "hospital_name": "Lee Regional Medical Center",
+      "county": "Lee",
+      "beds": 420,
+      "trauma_level": "I",
+      "lat": 26.7449,
+      "lon": -81.8506
+    },
+    {
+      "hospital_id": "H-071-2",
+      "hospital_name": "Lee Regional Hospital",
+      "county": "Lee",
+      "beds": 200,
+      "trauma_level": "III",
+      "lat": 26.7583,
+      "lon": -81.7658
+    },
+    {
+      "hospital_id": "H-015-1",
+      "hospital_name": "Charlotte Regional Medical Center",
+      "county": "Charlotte",
+      "beds": 600,
+      "trauma_level": "I",
+      "lat": 27.0044,
+      "lon": -82.093
+    },
+    {
+      "hospital_id": "H-015-2",
+      "hospital_name": "Charlotte Regional Hospital",
+      "county": "Charlotte",
+      "beds": 310,
+      "trauma_level": "II",
+      "lat": 26.98,
+      "lon": -82.1188
+    },
+    {
+      "hospital_id": "H-115-1",
+      "hospital_name": "Sarasota Regional Medical Center",
+      "county": "Sarasota",
+      "beds": 310,
+      "trauma_level": "III",
+      "lat": 27.3187,
+      "lon": -82.5314
+    },
+    {
+      "hospital_id": "H-115-2",
+      "hospital_name": "Sarasota Regional Hospital",
+      "county": "Sarasota",
+      "beds": 550,
+      "trauma_level": "III",
+      "lat": 27.281,
+      "lon": -82.6764
+    },
+    {
+      "hospital_id": "H-103-1",
+      "hospital_name": "Pinellas Regional Medical Center",
+      "county": "Pinellas",
+      "beds": 340,
+      "trauma_level": "III",
+      "lat": 27.7877,
+      "lon": -82.7401
+    },
+    {
+      "hospital_id": "H-103-2",
+      "hospital_name": "Pinellas Regional Hospital",
+      "county": "Pinellas",
+      "beds": 590,
+      "trauma_level": "III",
+      "lat": 27.9328,
+      "lon": -82.6761
+    },
+    {
+      "hospital_id": "H-057-1",
+      "hospital_name": "Hillsborough Regional Medical Center",
+      "county": "Hillsborough",
+      "beds": 240,
+      "trauma_level": "II",
+      "lat": 28.0719,
+      "lon": -82.2535
+    },
+    {
+      "hospital_id": "H-057-2",
+      "hospital_name": "Hillsborough Regional Hospital",
+      "county": "Hillsborough",
+      "beds": 540,
+      "trauma_level": "III",
+      "lat": 27.9875,
+      "lon": -82.3804
+    }
+  ]
+}

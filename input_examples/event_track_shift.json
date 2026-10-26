@@ -1,0 +1,18 @@
+{
+  "run_id": "ian-landfall-minus-48h",
+  "event": {
+    "type": "advisory_update",
+    "payload": {
+      "advisory_number": 23,
+      "issued_at": "2022-09-27T21:00Z",
+      "center_lat": 25.4,
+      "center_lon": -82.9,
+      "max_wind_kt": 130,
+      "forecast_landfall_county": "Lee",
+      "cone_polygon": [
+        [27.45, -82.75], [27.45, -81.55], [26.60, -81.40],
+        [26.10, -81.70], [26.15, -82.40], [26.90, -82.80]
+      ]
+    }
+  }
+}

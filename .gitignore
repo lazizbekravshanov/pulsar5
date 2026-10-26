@@ -1,0 +1,29 @@
+# Secrets — never commit
+.env
+.env.local
+*.key
+*.pem
+
+# Runtime logs (one sample trace is committed deliberately)
+logs/*
+!logs/.gitkeep
+!logs/trace-sample.jsonl
+
+# H-MEM persistent store is runtime state
+data/hmem/*
+!data/hmem/.gitkeep
+
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+
+# OS / editor
+.DS_Store
+.idea/
+.vscode/

@@ -1,0 +1,11 @@
+{
+  "run_id": "ian-replay-24h-markovian",
+  "input": {
+    "scenario": "ian_2022",
+    "region": ["Lee", "Charlotte", "Sarasota", "Pinellas", "Hillsborough"],
+    "replay_hour": "2022-09-26T21:00Z",
+    "goal": "Hourly replay across the forecast shift. Keep context flat and carry forward only what matters.",
+    "constraints": {"supply_trucks": 12, "staging_sites_max": 4}
+  },
+  "options": {"sample_mode": true, "max_iterations": 3, "replay_steps": 24}
+}

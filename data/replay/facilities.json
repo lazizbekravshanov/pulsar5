@@ -1,0 +1,468 @@
+{
+  "shelters": [
+    {
+      "shelter_id": "S-071-1",
+      "shelter_name": "Gulfview Community Center",
+      "county": "Lee",
+      "capacity": 1050,
+      "current_occupancy": 1050,
+      "status": "open",
+      "lat": 26.7103,
+      "lon": -81.7659,
+      "updated_at": "2022-09-26T06:00Z"
+    },
+    {
+      "shelter_id": "S-071-1",
+      "shelter_name": "Gulfview Community Center",
+      "county": "Lee",
+      "capacity": 1050,
+      "current_occupancy": 1050,
+      "status": "open",
+      "lat": 26.7103,
+      "lon": -81.7659,
+      "updated_at": "2022-09-27T18:00Z"
+    },
+    {
+      "shelter_id": "S-071-2",
+      "shelter_name": "Myakka Middle School",
+      "county": "Lee",
+      "capacity": 1050,
+      "current_occupancy": 89,
+      "status": "open",
+      "lat": 26.527,
+      "lon": -81.6878,
+      "updated_at": "2022-09-26T06:00Z"
+    },
+    {
+      "shelter_id": "S-071-2",
+      "shelter_name": "Myakka Middle School",
+      "county": "Lee",
+      "capacity": 1050,
+      "current_occupancy": 188,
+      "status": "open",
+      "lat": 26.527,
+      "lon": -81.6878,
+      "updated_at": "2022-09-27T18:00Z"
+    },
+    {
+      "shelter_id": "S-071-3",
+      "shelter_name": "Caloosa Elementary School",
+      "county": "Lee",
+      "capacity": 3150,
+      "current_occupancy": 365,
+      "status": "open",
+      "lat": 26.6937,
+      "lon": -81.9542,
+      "updated_at": "2022-09-26T06:00Z"
+    },
+    {
+      "shelter_id": "S-071-3",
+      "shelter_name": "Caloosa Elementary School",
+      "county": "Lee",
+      "capacity": 3150,
+      "current_occupancy": 767,
+      "status": "open",
+      "lat": 26.6937,
+      "lon": -81.9542,
+      "updated_at": "2022-09-27T18:00Z"
+    },
+    {
+      "shelter_id": "S-015-1",
+      "shelter_name": "Gulfview Community Center",
+      "county": "Charlotte",
+      "capacity": 2600,
+      "current_occupancy": 1008,
+      "status": "open",
+      "lat": 26.9347,
+      "lon": -82.0221,
+      "updated_at": "2022-09-26T06:00Z"
+    },
+    {
+      "shelter_id": "S-015-1",
+      "shelter_name": "Gulfview Community Center",
+      "county": "Charlotte",
+      "capacity": 2600,
+      "current_occupancy": 2118,
+      "status": "open",
+      "lat": 26.9347,
+      "lon": -82.0221,
+      "updated_at": "2022-09-27T18:00Z"
+    },
+    {
+      "shelter_id": "S-015-2",
+      "shelter_name": "Gulfview Community Center",
+      "county": "Charlotte",
+      "capacity": 3150,
+      "current_occupancy": 1090,
+      "status": "open",
+      "lat": 27.0187,
+      "lon": -82.1875,
+      "updated_at": "2022-09-26T06:00Z"
+    },
+    {
+      "shelter_id": "S-015-2",
+      "shelter_name": "Gulfview Community Center",
+      "county": "Charlotte",
+      "capacity": 3150,
+      "current_occupancy": 2289,
+      "status": "open",
+      "lat": 27.0187,
+      "lon": -82.1875,
+      "updated_at": "2022-09-27T18:00Z"
+    },
+    {
+      "shelter_id": "S-015-3",
+      "shelter_name": "Caloosa Middle School",
+      "county": "Charlotte",
+      "capacity": 2800,
+      "current_occupancy": 833,
+      "status": "open",
+      "lat": 26.8533,
+      "lon": -81.8567,
+      "updated_at": "2022-09-26T06:00Z"
+    },
+    {
+      "shelter_id": "S-015-3",
+      "shelter_name": "Caloosa Middle School",
+      "county": "Charlotte",
+      "capacity": 2800,
+      "current_occupancy": 1751,
+      "status": "open",
+      "lat": 26.8533,
+      "lon": -81.8567,
+      "updated_at": "2022-09-27T18:00Z"
+    },
+    {
+      "shelter_id": "S-115-1",
+      "shelter_name": "Cypress Elementary School",
+      "county": "Sarasota",
+      "capacity": 800,
+      "current_occupancy": 119,
+      "status": "open",
+      "lat": 27.2275,
+      "lon": -82.3232,
+      "updated_at": "2022-09-26T06:00Z"
+    },
+    {
+      "shelter_id": "S-115-1",
+      "shelter_name": "Cypress Elementary School",
+      "county": "Sarasota",
+      "capacity": 800,
+      "current_occupancy": 251,
+      "status": "open",
+      "lat": 27.2275,
+      "lon": -82.3232,
+      "updated_at": "2022-09-27T18:00Z"
+    },
+    {
+      "shelter_id": "S-115-2",
+      "shelter_name": "Pine Island Middle School",
+      "county": "Sarasota",
+      "capacity": 950,
+      "current_occupancy": 149,
+      "status": "open",
+      "lat": 27.2431,
+      "lon": -82.6323,
+      "updated_at": "2022-09-26T06:00Z"
+    },
+    {
+      "shelter_id": "S-115-2",
+      "shelter_name": "Pine Island Middle School",
+      "county": "Sarasota",
+      "capacity": 950,
+      "current_occupancy": 313,
+      "status": "open",
+      "lat": 27.2431,
+      "lon": -82.6323,
+      "updated_at": "2022-09-27T18:00Z"
+    },
+    {
+      "shelter_id": "S-115-3",
+      "shelter_name": "Gulfview Elementary School",
+      "county": "Sarasota",
+      "capacity": 2100,
+      "current_occupancy": 180,
+      "status": "open",
+      "lat": 27.1955,
+      "lon": -82.6453,
+      "updated_at": "2022-09-26T06:00Z"
+    },
+    {
+      "shelter_id": "S-115-3",
+      "shelter_name": "Gulfview Elementary School",
+      "county": "Sarasota",
+      "capacity": 2100,
+      "current_occupancy": 379,
+      "status": "open",
+      "lat": 27.1955,
+      "lon": -82.6453,
+      "updated_at": "2022-09-27T18:00Z"
+    },
+    {
+      "shelter_id": "S-103-1",
+      "shelter_name": "Cypress Civic Arena",
+      "county": "Pinellas",
+      "capacity": 800,
+      "current_occupancy": 96,
+      "status": "open",
+      "lat": 28.0154,
+      "lon": -82.5631,
+      "updated_at": "2022-09-26T06:00Z"
+    },
+    {
+      "shelter_id": "S-103-1",
+      "shelter_name": "Cypress Civic Arena",
+      "county": "Pinellas",
+      "capacity": 800,
+      "current_occupancy": 202,
+      "status": "open",
+      "lat": 28.0154,
+      "lon": -82.5631,
+      "updated_at": "2022-09-27T18:00Z"
+    },
+    {
+      "shelter_id": "S-103-2",
+      "shelter_name": "Caloosa Middle School",
+      "county": "Pinellas",
+      "capacity": 1650,
+      "current_occupancy": 134,
+      "status": "open",
+      "lat": 27.6459,
+      "lon": -82.8823,
+      "updated_at": "2022-09-26T06:00Z"
+    },
+    {
+      "shelter_id": "S-103-2",
+      "shelter_name": "Caloosa Middle School",
+      "county": "Pinellas",
+      "capacity": 1650,
+      "current_occupancy": 282,
+      "status": "open",
+      "lat": 27.6459,
+      "lon": -82.8823,
+      "updated_at": "2022-09-27T18:00Z"
+    },
+    {
+      "shelter_id": "S-103-3",
+      "shelter_name": "Gulfview Civic Arena",
+      "county": "Pinellas",
+      "capacity": 2850,
+      "current_occupancy": 53,
+      "status": "open",
+      "lat": 27.6647,
+      "lon": -82.8359,
+      "updated_at": "2022-09-26T06:00Z"
+    },
+    {
+      "shelter_id": "S-103-3",
+      "shelter_name": "Gulfview Civic Arena",
+      "county": "Pinellas",
+      "capacity": 2850,
+      "current_occupancy": 113,
+      "status": "open",
+      "lat": 27.6647,
+      "lon": -82.8359,
+      "updated_at": "2022-09-27T18:00Z"
+    },
+    {
+      "shelter_id": "S-057-1",
+      "shelter_name": "Caloosa High School",
+      "county": "Hillsborough",
+      "capacity": 3150,
+      "current_occupancy": 179,
+      "status": "open",
+      "lat": 27.7819,
+      "lon": -82.5498,
+      "updated_at": "2022-09-26T06:00Z"
+    },
+    {
+      "shelter_id": "S-057-1",
+      "shelter_name": "Caloosa High School",
+      "county": "Hillsborough",
+      "capacity": 3150,
+      "current_occupancy": 376,
+      "status": "open",
+      "lat": 27.7819,
+      "lon": -82.5498,
+      "updated_at": "2022-09-27T18:00Z"
+    },
+    {
+      "shelter_id": "S-057-2",
+      "shelter_name": "Cypress Elementary School",
+      "county": "Hillsborough",
+      "capacity": 2050,
+      "current_occupancy": 168,
+      "status": "open",
+      "lat": 27.8141,
+      "lon": -82.1442,
+      "updated_at": "2022-09-26T06:00Z"
+    },
+    {
+      "shelter_id": "S-057-2",
+      "shelter_name": "Cypress Elementary School",
+      "county": "Hillsborough",
+      "capacity": 2050,
+      "current_occupancy": 353,
+      "status": "open",
+      "lat": 27.8141,
+      "lon": -82.1442,
+      "updated_at": "2022-09-27T18:00Z"
+    },
+    {
+      "shelter_id": "S-057-3",
+      "shelter_name": "Gulfview Community Center",
+      "county": "Hillsborough",
+      "capacity": 950,
+      "current_occupancy": 31,
+      "status": "open",
+      "lat": 27.9282,
+      "lon": -82.1953,
+      "updated_at": "2022-09-26T06:00Z"
+    },
+    {
+      "shelter_id": "S-057-3",
+      "shelter_name": "Gulfview Community Center",
+      "county": "Hillsborough",
+      "capacity": 950,
+      "current_occupancy": 66,
+      "status": "open",
+      "lat": 27.9282,
+      "lon": -82.1953,
+      "updated_at": "2022-09-27T18:00Z"
+    }
+  ],
+  "hospitals": [
+    {
+      "hospital_id": "H-071-1",
+      "hospital_name": "Lee Regional Medical Center",
+      "county": "Lee",
+      "beds": 420,
+      "trauma_level": "I",
+      "lat": 26.7449,
+      "lon": -81.8506
+    },
+    {
+      "hospital_id": "H-071-2",
+      "hospital_name": "Lee Regional Hospital",
+      "county": "Lee",
+      "beds": 200,
+      "trauma_level": "III",
+      "lat": 26.7583,
+      "lon": -81.7658
+    },
+    {
+      "hospital_id": "H-015-1",
+      "hospital_name": "Charlotte Regional Medical Center",
+      "county": "Charlotte",
+      "beds": 600,
+      "trauma_level": "I",
+      "lat": 27.0044,
+      "lon": -82.093
+    },
+    {
+      "hospital_id": "H-015-2",
+      "hospital_name": "Charlotte Regional Hospital",
+      "county": "Charlotte",
+      "beds": 310,
+      "trauma_level": "II",
+      "lat": 26.98,
+      "lon": -82.1188
+    },
+    {
+      "hospital_id": "H-115-1",
+      "hospital_name": "Sarasota Regional Medical Center",
+      "county": "Sarasota",
+      "beds": 310,
+      "trauma_level": "III",
+      "lat": 27.3187,
+      "lon": -82.5314
+    },
+    {
+      "hospital_id": "H-115-2",
+      "hospital_name": "Sarasota Regional Hospital",
+      "county": "Sarasota",
+      "beds": 550,
+      "trauma_level": "III",
+      "lat": 27.281,
+      "lon": -82.6764
+    },
+    {
+      "hospital_id": "H-103-1",
+      "hospital_name": "Pinellas Regional Medical Center",
+      "county": "Pinellas",
+      "beds": 340,
+      "trauma_level": "III",
+      "lat": 27.7877,
+      "lon": -82.7401
+    },
+    {
+      "hospital_id": "H-103-2",
+      "hospital_name": "Pinellas Regional Hospital",
+      "county": "Pinellas",
+      "beds": 590,
+      "trauma_level": "III",
+      "lat": 27.9328,
+      "lon": -82.6761
+    },
+    {
+      "hospital_id": "H-057-1",
+      "hospital_name": "Hillsborough Regional Medical Center",
+      "county": "Hillsborough",
+      "beds": 240,
+      "trauma_level": "II",
+      "lat": 28.0719,
+      "lon": -82.2535
+    },
+    {
+      "hospital_id": "H-057-2",
+      "hospital_name": "Hillsborough Regional Hospital",
+      "county": "Hillsborough",
+      "beds": 540,
+      "trauma_level": "III",
+      "lat": 27.9875,
+      "lon": -82.3804
+    }
+  ],
+  "staging_sites": [
+    {
+      "site_id": "ST-071",
+      "site_name": "Lee County Logistics Point",
+      "county": "Lee",
+      "lat": 26.553,
+      "lon": -81.8768,
+      "truck_capacity": 14
+    },
+    {
+      "site_id": "ST-015",
+      "site_name": "Charlotte County Logistics Point",
+      "county": "Charlotte",
+      "lat": 26.9079,
+      "lon": -81.9619,
+      "truck_capacity": 14
+    },
+    {
+      "site_id": "ST-115",
+      "site_name": "Sarasota County Logistics Point",
+      "county": "Sarasota",
+      "lat": 27.2233,
+      "lon": -82.4814,
+      "truck_capacity": 10
+    },
+    {
+      "site_id": "ST-103",
+      "site_name": "Pinellas County Logistics Point",
+      "county": "Pinellas",
+      "lat": 27.9282,
+      "lon": -82.7872,
+      "truck_capacity": 8
+    },
+    {
+      "site_id": "ST-057",
+      "site_name": "Hillsborough County Logistics Point",
+      "county": "Hillsborough",
+      "lat": 27.9215,
+      "lon": -82.2719,
+      "truck_capacity": 8
+    }
+  ]
+}

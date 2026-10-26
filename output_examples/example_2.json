@@ -1,0 +1,219 @@
+{
+  "run": {
+    "run_id": "ian-lee-charlotte-tight-supply",
+    "status": "escalated",
+    "output": {
+      "plan": {
+        "plan_id": "plan-2026-10-26T12:15:10Z-7",
+        "replay_hour": "2022-09-26T12:00Z",
+        "actions": [
+          {
+            "action_id": "ACT-001",
+            "kind": "evacuate_zone",
+            "target": "FL-015-0507",
+            "detail": "Evacuate zone FL-015-0507 (Charlotte): population 4900, vulnerability 0.64, 12 mi outside the cone",
+            "priority": 1,
+            "reversible": false,
+            "confidence": 0.81,
+            "evidence_ids": [
+              "zone:FL-015-0507:population",
+              "zone:FL-015-0507:vulnerability",
+              "hazard:cone_polygon",
+              "hazard:advisory_number"
+            ],
+            "rationale": "High social vulnerability within 25 mi of the cone"
+          },
+          {
+            "action_id": "ACT-002",
+            "kind": "evacuate_zone",
+            "target": "FL-015-0500",
+            "detail": "Evacuate zone FL-015-0500 (Charlotte): population 10300, vulnerability 0.87, 24 mi outside the cone",
+            "priority": 2,
+            "reversible": false,
+            "confidence": 0.9,
+            "evidence_ids": [
+              "zone:FL-015-0500:population",
+              "zone:FL-015-0500:vulnerability",
+              "hazard:cone_polygon",
+              "hazard:advisory_number"
+            ],
+            "rationale": "High social vulnerability within 25 mi of the cone"
+          },
+          {
+            "action_id": "ACT-003",
+            "kind": "open_shelter",
+            "target": "S-015-1",
+            "detail": "Open Gulfview Community Center (Charlotte): 1592 spaces free of 2600",
+            "priority": 1,
+            "reversible": true,
+            "confidence": 0.82,
+            "evidence_ids": [
+              "shelter:S-015-1:capacity",
+              "shelter:S-015-1:occupancy"
+            ],
+            "rationale": "Nearest shelter with headroom to the evacuating zones"
+          },
+          {
+            "action_id": "ACT-004",
+            "kind": "open_shelter",
+            "target": "S-015-3",
+            "detail": "Open Caloosa Middle School (Charlotte): 1967 spaces free of 2800",
+            "priority": 2,
+            "reversible": true,
+            "confidence": 0.82,
+            "evidence_ids": [
+              "shelter:S-015-3:capacity",
+              "shelter:S-015-3:occupancy"
+            ],
+            "rationale": "Nearest shelter with headroom to the evacuating zones"
+          },
+          {
+            "action_id": "ACT-005",
+            "kind": "open_shelter",
+            "target": "S-071-3",
+            "detail": "Open Caloosa Elementary School (Lee): 2785 spaces free of 3150",
+            "priority": 3,
+            "reversible": true,
+            "confidence": 0.82,
+            "evidence_ids": [
+              "shelter:S-071-3:capacity",
+              "shelter:S-071-3:occupancy"
+            ],
+            "rationale": "Nearest shelter with headroom to the evacuating zones"
+          },
+          {
+            "action_id": "ACT-006",
+            "kind": "stage_supplies",
+            "target": "ST-015",
+            "detail": "Stage 2 truckloads at Charlotte County Logistics Point (Charlotte)",
+            "priority": 1,
+            "reversible": true,
+            "confidence": 0.78,
+            "evidence_ids": [
+              "staging:ST-015:truck_capacity"
+            ],
+            "rationale": "Closest logistics point to the shelters being opened"
+          },
+          {
+            "action_id": "ACT-007",
+            "kind": "stage_supplies",
+            "target": "ST-071",
+            "detail": "Stage 2 truckloads at Lee County Logistics Point (Lee)",
+            "priority": 2,
+            "reversible": true,
+            "confidence": 0.78,
+            "evidence_ids": [
+              "staging:ST-071:truck_capacity"
+            ],
+            "rationale": "Closest logistics point to the shelters being opened"
+          }
+        ],
+        "summary": "Advisory 15: evacuate 2 zones, open 3 shelters (6344 spaces for ~2736 expected evacuees), stage at 2 sites. Memory applied: Seen in 2 runs: Opening budget fell 14270 spaces short at 2022-09-26T12:00Z; start with a ",
+        "produced_by": "Planner"
+      },
+      "escalations": [
+        {
+          "action_id": "ACT-001",
+          "reason": "irreversible action requires human authorisation",
+          "confidence": 0.78,
+          "reversible": false,
+          "requires": "human_approval"
+        },
+        {
+          "action_id": "ACT-002",
+          "reason": "irreversible action requires human authorisation",
+          "confidence": 0.78,
+          "reversible": false,
+          "requires": "human_approval"
+        }
+      ],
+      "unresolved_issues": [
+        "distant_vulnerable_zone: Zone FL-071-0500 (Lee) scores 0.83 on social vulnerability but lies 48 mi outside the current cone. No evacuation is warranted yet; pre-positioning there is an operator call"
+      ],
+      "simulation": {
+        "ok": true,
+        "violations": [],
+        "metrics": {
+          "expected_evacuees": 2736.0,
+          "open_shelter_capacity": 6344.0,
+          "regional_shelter_capacity": 9365.0,
+          "capacity_margin": 3608.0,
+          "zones_in_hazard": 0.0,
+          "zones_covered": 0.0,
+          "coverage_rate": 1.0,
+          "high_vulnerability_uncovered": 0.0,
+          "staging_sites_used": 2.0,
+          "trucks_needed": 2.28,
+          "shelters_out_of_range": 0.0
+        }
+      },
+      "critique": {
+        "accepted": true,
+        "findings": [
+          {
+            "code": "distant_vulnerable_zone",
+            "message": "Zone FL-071-0500 (Lee) scores 0.83 on social vulnerability but lies 48 mi outside the current cone. No evacuation is warranted yet; pre-positioning there is an operator call",
+            "action_id": null
+          }
+        ],
+        "instructions": [],
+        "confidence": 0.78,
+        "reviewed_by_model": null
+      },
+      "memory_recalled": [
+        "Seen in 2 runs: Opening budget fell 14270 spaces short at 2022-09-26T12:00Z; start with a larger opening budget for this scenario",
+        "Seen in 2 runs: Plan at 2022-09-26T12:00Z was refused for: high_vulnerability_zone_unaddressed",
+        "Opening budget fell 4819 spaces short at 2022-09-26T12:00Z; start with a larger opening budget for this scenario",
+        "Opening budget fell 14270 spaces short at 2022-09-26T12:00Z; start with a larger opening budget for this scenario",
+        "Plan at 2022-09-26T12:00Z was refused for: insufficient_shelter_capacity, stale_evidence"
+      ]
+    },
+    "agents": [
+      {
+        "name": "Analyst",
+        "role": "Writes Lightning SQL, runs it through Zetaris, and loads facts with provenance into the World Model",
+        "lane": "fast"
+      },
+      {
+        "name": "Planner",
+        "role": "Builds shelter openings, supply staging and evacuation priority, citing World Model evidence ids",
+        "lane": "deep"
+      },
+      {
+        "name": "Simulator",
+        "role": "Deterministic capacity, coverage, distance and budget checks; returns structured violations",
+        "lane": "fast"
+      },
+      {
+        "name": "Critic",
+        "role": "Verifies every claim against cited evidence, flags stale facts, and can reject the plan",
+        "lane": "judge"
+      },
+      {
+        "name": "Risk",
+        "role": "Classifies actions reversible or irreversible and routes low-confidence or irreversible calls to a human",
+        "lane": "fast"
+      },
+      {
+        "name": "BeliefReviser",
+        "role": "Diffs the World Model on new events, invalidates only dependent decisions, triggers a targeted replan",
+        "lane": "deep"
+      }
+    ],
+    "iterations": 1,
+    "models_used": [
+      "meterless/auto"
+    ],
+    "engines_used": [
+      "hmem",
+      "markovian",
+      "world_model"
+    ],
+    "zetaris_queries": 7,
+    "trace_id": "6f3806f2-b787-4b76-973c-8a283ec1f494",
+    "log_file": "/Users/kali/pet/pulsar5/logs/trace-ian-lee-charlotte-tight-supply.jsonl",
+    "execution_time_seconds": 0.003,
+    "sample_mode": true,
+    "error": null
+  }
+}

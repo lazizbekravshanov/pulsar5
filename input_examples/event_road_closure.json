@@ -1,0 +1,16 @@
+{
+  "run_id": "ian-landfall-minus-48h",
+  "event": {
+    "type": "road_closure",
+    "payload": {
+      "event_id": "RD-001",
+      "route": "I-75 southbound ramp at Corkscrew Rd",
+      "county": "Lee",
+      "status": "closed",
+      "lat": 26.4361,
+      "lon": -81.7795,
+      "reported_at": "2022-09-27T18:00Z",
+      "affects_staging_site": "ST-071"
+    }
+  }
+}

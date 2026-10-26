@@ -1,0 +1,698 @@
+{
+  "run": {
+    "run_id": "ian-replay-24h-markovian",
+    "status": "escalated",
+    "output": {
+      "plan": {
+        "plan_id": "plan-2026-10-26T12:15:32Z-1104",
+        "replay_hour": "2022-09-27T20:00Z",
+        "actions": [
+          {
+            "action_id": "ACT-1078",
+            "kind": "evacuate_zone",
+            "target": "FL-015-0500",
+            "detail": "Evacuate zone FL-015-0500 (Charlotte): population 10300, vulnerability 0.87, inside the forecast cone",
+            "priority": 1,
+            "reversible": false,
+            "confidence": 0.9,
+            "evidence_ids": [
+              "zone:FL-015-0500:population",
+              "zone:FL-015-0500:vulnerability",
+              "hazard:cone_polygon",
+              "hazard:advisory_number"
+            ],
+            "rationale": "Inside the forecast cone"
+          },
+          {
+            "action_id": "ACT-1079",
+            "kind": "evacuate_zone",
+            "target": "FL-115-0500",
+            "detail": "Evacuate zone FL-115-0500 (Sarasota): population 3600, vulnerability 0.84, inside the forecast cone",
+            "priority": 2,
+            "reversible": false,
+            "confidence": 0.89,
+            "evidence_ids": [
+              "zone:FL-115-0500:population",
+              "zone:FL-115-0500:vulnerability",
+              "hazard:cone_polygon",
+              "hazard:advisory_number"
+            ],
+            "rationale": "Inside the forecast cone"
+          },
+          {
+            "action_id": "ACT-1080",
+            "kind": "evacuate_zone",
+            "target": "FL-071-0500",
+            "detail": "Evacuate zone FL-071-0500 (Lee): population 10000, vulnerability 0.83, inside the forecast cone",
+            "priority": 3,
+            "reversible": false,
+            "confidence": 0.88,
+            "evidence_ids": [
+              "zone:FL-071-0500:population",
+              "zone:FL-071-0500:vulnerability",
+              "hazard:cone_polygon",
+              "hazard:advisory_number"
+            ],
+            "rationale": "Inside the forecast cone"
+          },
+          {
+            "action_id": "ACT-1081",
+            "kind": "evacuate_zone",
+            "target": "FL-015-0507",
+            "detail": "Evacuate zone FL-015-0507 (Charlotte): population 4900, vulnerability 0.64, inside the forecast cone",
+            "priority": 4,
+            "reversible": false,
+            "confidence": 0.81,
+            "evidence_ids": [
+              "zone:FL-015-0507:population",
+              "zone:FL-015-0507:vulnerability",
+              "hazard:cone_polygon",
+              "hazard:advisory_number"
+            ],
+            "rationale": "Inside the forecast cone"
+          },
+          {
+            "action_id": "ACT-1082",
+            "kind": "evacuate_zone",
+            "target": "FL-115-0507",
+            "detail": "Evacuate zone FL-115-0507 (Sarasota): population 11500, vulnerability 0.59, inside the forecast cone",
+            "priority": 5,
+            "reversible": false,
+            "confidence": 0.79,
+            "evidence_ids": [
+              "zone:FL-115-0507:population",
+              "zone:FL-115-0507:vulnerability",
+              "hazard:cone_polygon",
+              "hazard:advisory_number"
+            ],
+            "rationale": "Inside the forecast cone"
+          },
+          {
+            "action_id": "ACT-1083",
+            "kind": "evacuate_zone",
+            "target": "FL-071-0507",
+            "detail": "Evacuate zone FL-071-0507 (Lee): population 7300, vulnerability 0.58, inside the forecast cone",
+            "priority": 6,
+            "reversible": false,
+            "confidence": 0.78,
+            "evidence_ids": [
+              "zone:FL-071-0507:population",
+              "zone:FL-071-0507:vulnerability",
+              "hazard:cone_polygon",
+              "hazard:advisory_number"
+            ],
+            "rationale": "Inside the forecast cone"
+          },
+          {
+            "action_id": "ACT-1084",
+            "kind": "evacuate_zone",
+            "target": "FL-071-0514",
+            "detail": "Evacuate zone FL-071-0514 (Lee): population 7800, vulnerability 0.48, inside the forecast cone",
+            "priority": 7,
+            "reversible": false,
+            "confidence": 0.74,
+            "evidence_ids": [
+              "zone:FL-071-0514:population",
+              "zone:FL-071-0514:vulnerability",
+              "hazard:cone_polygon",
+              "hazard:advisory_number"
+            ],
+            "rationale": "Inside the forecast cone"
+          },
+          {
+            "action_id": "ACT-1085",
+            "kind": "evacuate_zone",
+            "target": "FL-015-0514",
+            "detail": "Evacuate zone FL-015-0514 (Charlotte): population 8400, vulnerability 0.44, inside the forecast cone",
+            "priority": 8,
+            "reversible": false,
+            "confidence": 0.73,
+            "evidence_ids": [
+              "zone:FL-015-0514:population",
+              "zone:FL-015-0514:vulnerability",
+              "hazard:cone_polygon",
+              "hazard:advisory_number"
+            ],
+            "rationale": "Inside the forecast cone"
+          },
+          {
+            "action_id": "ACT-1086",
+            "kind": "evacuate_zone",
+            "target": "FL-103-0500",
+            "detail": "Evacuate zone FL-103-0500 (Pinellas): population 8500, vulnerability 0.86, 16 mi outside the cone",
+            "priority": 9,
+            "reversible": false,
+            "confidence": 0.9,
+            "evidence_ids": [
+              "zone:FL-103-0500:population",
+              "zone:FL-103-0500:vulnerability",
+              "hazard:cone_polygon",
+              "hazard:advisory_number"
+            ],
+            "rationale": "High social vulnerability within 25 mi of the cone"
+          },
+          {
+            "action_id": "ACT-1087",
+            "kind": "open_shelter",
+            "target": "S-015-1",
+            "detail": "Open Gulfview Community Center (Charlotte): 482 spaces free of 2600",
+            "priority": 1,
+            "reversible": true,
+            "confidence": 0.82,
+            "evidence_ids": [
+              "shelter:S-015-1:capacity",
+              "shelter:S-015-1:occupancy"
+            ],
+            "rationale": "Nearest shelter with headroom to the evacuating zones"
+          },
+          {
+            "action_id": "ACT-1088",
+            "kind": "open_shelter",
+            "target": "S-015-3",
+            "detail": "Open Caloosa Middle School (Charlotte): 1049 spaces free of 2800",
+            "priority": 2,
+            "reversible": true,
+            "confidence": 0.82,
+            "evidence_ids": [
+              "shelter:S-015-3:capacity",
+              "shelter:S-015-3:occupancy"
+            ],
+            "rationale": "Nearest shelter with headroom to the evacuating zones"
+          },
+          {
+            "action_id": "ACT-1089",
+            "kind": "open_shelter",
+            "target": "S-015-2",
+            "detail": "Open Gulfview Community Center (Charlotte): 861 spaces free of 3150",
+            "priority": 3,
+            "reversible": true,
+            "confidence": 0.82,
+            "evidence_ids": [
+              "shelter:S-015-2:capacity",
+              "shelter:S-015-2:occupancy"
+            ],
+            "rationale": "Nearest shelter with headroom to the evacuating zones"
+          },
+          {
+            "action_id": "ACT-1090",
+            "kind": "open_shelter",
+            "target": "S-115-1",
+            "detail": "Open Cypress Elementary School (Sarasota): 549 spaces free of 800",
+            "priority": 4,
+            "reversible": true,
+            "confidence": 0.82,
+            "evidence_ids": [
+              "shelter:S-115-1:capacity",
+              "shelter:S-115-1:occupancy"
+            ],
+            "rationale": "Nearest shelter with headroom to the evacuating zones"
+          },
+          {
+            "action_id": "ACT-1091",
+            "kind": "open_shelter",
+            "target": "S-115-2",
+            "detail": "Open Pine Island Middle School (Sarasota): 637 spaces free of 950",
+            "priority": 5,
+            "reversible": true,
+            "confidence": 0.82,
+            "evidence_ids": [
+              "shelter:S-115-2:capacity",
+              "shelter:S-115-2:occupancy"
+            ],
+            "rationale": "Nearest shelter with headroom to the evacuating zones"
+          },
+          {
+            "action_id": "ACT-1092",
+            "kind": "open_shelter",
+            "target": "S-071-2",
+            "detail": "Open Myakka Middle School (Lee): 862 spaces free of 1050",
+            "priority": 6,
+            "reversible": true,
+            "confidence": 0.82,
+            "evidence_ids": [
+              "shelter:S-071-2:capacity",
+              "shelter:S-071-2:occupancy"
+            ],
+            "rationale": "Nearest shelter with headroom to the evacuating zones"
+          },
+          {
+            "action_id": "ACT-1093",
+            "kind": "open_shelter",
+            "target": "S-071-3",
+            "detail": "Open Caloosa Elementary School (Lee): 2383 spaces free of 3150",
+            "priority": 7,
+            "reversible": true,
+            "confidence": 0.82,
+            "evidence_ids": [
+              "shelter:S-071-3:capacity",
+              "shelter:S-071-3:occupancy"
+            ],
+            "rationale": "Nearest shelter with headroom to the evacuating zones"
+          },
+          {
+            "action_id": "ACT-1094",
+            "kind": "open_shelter",
+            "target": "S-115-3",
+            "detail": "Open Gulfview Elementary School (Sarasota): 1721 spaces free of 2100",
+            "priority": 8,
+            "reversible": true,
+            "confidence": 0.82,
+            "evidence_ids": [
+              "shelter:S-115-3:capacity",
+              "shelter:S-115-3:occupancy"
+            ],
+            "rationale": "Nearest shelter with headroom to the evacuating zones"
+          },
+          {
+            "action_id": "ACT-1095",
+            "kind": "open_shelter",
+            "target": "S-057-1",
+            "detail": "Open Caloosa High School (Hillsborough): 2774 spaces free of 3150",
+            "priority": 9,
+            "reversible": true,
+            "confidence": 0.82,
+            "evidence_ids": [
+              "shelter:S-057-1:capacity",
+              "shelter:S-057-1:occupancy"
+            ],
+            "rationale": "Nearest shelter with headroom to the evacuating zones"
+          },
+          {
+            "action_id": "ACT-1096",
+            "kind": "open_shelter",
+            "target": "S-103-3",
+            "detail": "Open Gulfview Civic Arena (Pinellas): 2737 spaces free of 2850",
+            "priority": 10,
+            "reversible": true,
+            "confidence": 0.82,
+            "evidence_ids": [
+              "shelter:S-103-3:capacity",
+              "shelter:S-103-3:occupancy"
+            ],
+            "rationale": "Nearest shelter with headroom to the evacuating zones"
+          },
+          {
+            "action_id": "ACT-1097",
+            "kind": "open_shelter",
+            "target": "S-103-2",
+            "detail": "Open Caloosa Middle School (Pinellas): 1368 spaces free of 1650",
+            "priority": 11,
+            "reversible": true,
+            "confidence": 0.82,
+            "evidence_ids": [
+              "shelter:S-103-2:capacity",
+              "shelter:S-103-2:occupancy"
+            ],
+            "rationale": "Nearest shelter with headroom to the evacuating zones"
+          },
+          {
+            "action_id": "ACT-1098",
+            "kind": "open_shelter",
+            "target": "S-103-1",
+            "detail": "Open Cypress Civic Arena (Pinellas): 598 spaces free of 800",
+            "priority": 12,
+            "reversible": true,
+            "confidence": 0.82,
+            "evidence_ids": [
+              "shelter:S-103-1:capacity",
+              "shelter:S-103-1:occupancy"
+            ],
+            "rationale": "Nearest shelter with headroom to the evacuating zones"
+          },
+          {
+            "action_id": "ACT-1099",
+            "kind": "open_shelter",
+            "target": "S-057-2",
+            "detail": "Open Cypress Elementary School (Hillsborough): 1697 spaces free of 2050",
+            "priority": 13,
+            "reversible": true,
+            "confidence": 0.82,
+            "evidence_ids": [
+              "shelter:S-057-2:capacity",
+              "shelter:S-057-2:occupancy"
+            ],
+            "rationale": "Nearest shelter with headroom to the evacuating zones"
+          },
+          {
+            "action_id": "ACT-1100",
+            "kind": "open_shelter",
+            "target": "S-057-3",
+            "detail": "Open Gulfview Community Center (Hillsborough): 884 spaces free of 950",
+            "priority": 14,
+            "reversible": true,
+            "confidence": 0.82,
+            "evidence_ids": [
+              "shelter:S-057-3:capacity",
+              "shelter:S-057-3:occupancy"
+            ],
+            "rationale": "Nearest shelter with headroom to the evacuating zones"
+          },
+          {
+            "action_id": "ACT-1101",
+            "kind": "stage_supplies",
+            "target": "ST-015",
+            "detail": "Stage 3 truckloads at Charlotte County Logistics Point (Charlotte)",
+            "priority": 1,
+            "reversible": true,
+            "confidence": 0.78,
+            "evidence_ids": [
+              "staging:ST-015:truck_capacity"
+            ],
+            "rationale": "Closest logistics point to the shelters being opened"
+          },
+          {
+            "action_id": "ACT-1102",
+            "kind": "stage_supplies",
+            "target": "ST-057",
+            "detail": "Stage 3 truckloads at Hillsborough County Logistics Point (Hillsborough)",
+            "priority": 2,
+            "reversible": true,
+            "confidence": 0.78,
+            "evidence_ids": [
+              "staging:ST-057:truck_capacity"
+            ],
+            "rationale": "Closest logistics point to the shelters being opened"
+          },
+          {
+            "action_id": "ACT-1103",
+            "kind": "stage_supplies",
+            "target": "ST-115",
+            "detail": "Stage 3 truckloads at Sarasota County Logistics Point (Sarasota)",
+            "priority": 3,
+            "reversible": true,
+            "confidence": 0.78,
+            "evidence_ids": [
+              "staging:ST-115:truck_capacity"
+            ],
+            "rationale": "Closest logistics point to the shelters being opened"
+          },
+          {
+            "action_id": "ACT-1104",
+            "kind": "stage_supplies",
+            "target": "ST-071",
+            "detail": "Stage 3 truckloads at Lee County Logistics Point (Lee)",
+            "priority": 4,
+            "reversible": true,
+            "confidence": 0.78,
+            "evidence_ids": [
+              "staging:ST-071:truck_capacity"
+            ],
+            "rationale": "Closest logistics point to the shelters being opened"
+          }
+        ],
+        "summary": "Advisory 21: evacuate 9 zones, open 14 shelters (18602 spaces for ~13014 expected evacuees), stage at 4 sites. Memory applied: Seen in 2 runs: Opening budget fell 14270 spaces short at 2022-09-26T12:00Z; start with a ",
+        "produced_by": "Planner"
+      },
+      "escalations": [
+        {
+          "action_id": "ACT-1078",
+          "reason": "irreversible action requires human authorisation; confidence 0.54 is below the 0.70 threshold",
+          "confidence": 0.54,
+          "reversible": false,
+          "requires": "human_approval"
+        },
+        {
+          "action_id": "ACT-1079",
+          "reason": "irreversible action requires human authorisation; confidence 0.54 is below the 0.70 threshold",
+          "confidence": 0.54,
+          "reversible": false,
+          "requires": "human_approval"
+        },
+        {
+          "action_id": "ACT-1080",
+          "reason": "irreversible action requires human authorisation; confidence 0.54 is below the 0.70 threshold",
+          "confidence": 0.54,
+          "reversible": false,
+          "requires": "human_approval"
+        },
+        {
+          "action_id": "ACT-1081",
+          "reason": "irreversible action requires human authorisation; confidence 0.54 is below the 0.70 threshold",
+          "confidence": 0.54,
+          "reversible": false,
+          "requires": "human_approval"
+        },
+        {
+          "action_id": "ACT-1082",
+          "reason": "irreversible action requires human authorisation; confidence 0.54 is below the 0.70 threshold",
+          "confidence": 0.54,
+          "reversible": false,
+          "requires": "human_approval"
+        },
+        {
+          "action_id": "ACT-1083",
+          "reason": "irreversible action requires human authorisation; confidence 0.54 is below the 0.70 threshold",
+          "confidence": 0.54,
+          "reversible": false,
+          "requires": "human_approval"
+        },
+        {
+          "action_id": "ACT-1084",
+          "reason": "irreversible action requires human authorisation; confidence 0.54 is below the 0.70 threshold",
+          "confidence": 0.54,
+          "reversible": false,
+          "requires": "human_approval"
+        },
+        {
+          "action_id": "ACT-1085",
+          "reason": "irreversible action requires human authorisation; confidence 0.54 is below the 0.70 threshold",
+          "confidence": 0.54,
+          "reversible": false,
+          "requires": "human_approval"
+        },
+        {
+          "action_id": "ACT-1086",
+          "reason": "irreversible action requires human authorisation; confidence 0.54 is below the 0.70 threshold",
+          "confidence": 0.54,
+          "reversible": false,
+          "requires": "human_approval"
+        },
+        {
+          "action_id": "ACT-1087",
+          "reason": "confidence 0.54 is below the 0.70 threshold",
+          "confidence": 0.54,
+          "reversible": true,
+          "requires": "human_approval"
+        },
+        {
+          "action_id": "ACT-1088",
+          "reason": "confidence 0.54 is below the 0.70 threshold",
+          "confidence": 0.54,
+          "reversible": true,
+          "requires": "human_approval"
+        },
+        {
+          "action_id": "ACT-1089",
+          "reason": "confidence 0.54 is below the 0.70 threshold",
+          "confidence": 0.54,
+          "reversible": true,
+          "requires": "human_approval"
+        },
+        {
+          "action_id": "ACT-1090",
+          "reason": "confidence 0.54 is below the 0.70 threshold",
+          "confidence": 0.54,
+          "reversible": true,
+          "requires": "human_approval"
+        },
+        {
+          "action_id": "ACT-1091",
+          "reason": "confidence 0.54 is below the 0.70 threshold",
+          "confidence": 0.54,
+          "reversible": true,
+          "requires": "human_approval"
+        },
+        {
+          "action_id": "ACT-1092",
+          "reason": "confidence 0.54 is below the 0.70 threshold",
+          "confidence": 0.54,
+          "reversible": true,
+          "requires": "human_approval"
+        },
+        {
+          "action_id": "ACT-1093",
+          "reason": "confidence 0.54 is below the 0.70 threshold",
+          "confidence": 0.54,
+          "reversible": true,
+          "requires": "human_approval"
+        },
+        {
+          "action_id": "ACT-1094",
+          "reason": "confidence 0.54 is below the 0.70 threshold",
+          "confidence": 0.54,
+          "reversible": true,
+          "requires": "human_approval"
+        },
+        {
+          "action_id": "ACT-1095",
+          "reason": "confidence 0.54 is below the 0.70 threshold",
+          "confidence": 0.54,
+          "reversible": true,
+          "requires": "human_approval"
+        },
+        {
+          "action_id": "ACT-1096",
+          "reason": "confidence 0.54 is below the 0.70 threshold",
+          "confidence": 0.54,
+          "reversible": true,
+          "requires": "human_approval"
+        },
+        {
+          "action_id": "ACT-1097",
+          "reason": "confidence 0.54 is below the 0.70 threshold",
+          "confidence": 0.54,
+          "reversible": true,
+          "requires": "human_approval"
+        },
+        {
+          "action_id": "ACT-1098",
+          "reason": "confidence 0.54 is below the 0.70 threshold",
+          "confidence": 0.54,
+          "reversible": true,
+          "requires": "human_approval"
+        },
+        {
+          "action_id": "ACT-1099",
+          "reason": "confidence 0.54 is below the 0.70 threshold",
+          "confidence": 0.54,
+          "reversible": true,
+          "requires": "human_approval"
+        },
+        {
+          "action_id": "ACT-1100",
+          "reason": "confidence 0.54 is below the 0.70 threshold",
+          "confidence": 0.54,
+          "reversible": true,
+          "requires": "human_approval"
+        },
+        {
+          "action_id": "ACT-1101",
+          "reason": "confidence 0.54 is below the 0.70 threshold",
+          "confidence": 0.54,
+          "reversible": true,
+          "requires": "human_approval"
+        },
+        {
+          "action_id": "ACT-1102",
+          "reason": "confidence 0.54 is below the 0.70 threshold",
+          "confidence": 0.54,
+          "reversible": true,
+          "requires": "human_approval"
+        },
+        {
+          "action_id": "ACT-1103",
+          "reason": "confidence 0.54 is below the 0.70 threshold",
+          "confidence": 0.54,
+          "reversible": true,
+          "requires": "human_approval"
+        },
+        {
+          "action_id": "ACT-1104",
+          "reason": "confidence 0.54 is below the 0.70 threshold",
+          "confidence": 0.54,
+          "reversible": true,
+          "requires": "human_approval"
+        }
+      ],
+      "unresolved_issues": [
+        "distant_vulnerable_zone: Zone FL-057-0500 (Hillsborough) scores 0.76 on social vulnerability but lies 41 mi outside the current cone. No evacuation is warranted yet; pre-positioning there is an operator call",
+        "distant_vulnerable_zone: Zone FL-103-0507 (Pinellas) scores 0.63 on social vulnerability but lies 28 mi outside the current cone. No evacuation is warranted yet; pre-positioning there is an operator call",
+        "distant_vulnerable_zone: Zone FL-057-0507 (Hillsborough) scores 0.61 on social vulnerability but lies 44 mi outside the current cone. No evacuation is warranted yet; pre-positioning there is an operator call"
+      ],
+      "simulation": {
+        "ok": true,
+        "violations": [],
+        "metrics": {
+          "expected_evacuees": 13014.0,
+          "open_shelter_capacity": 18602.0,
+          "regional_shelter_capacity": 18602.0,
+          "capacity_margin": 5588.0,
+          "zones_in_hazard": 8.0,
+          "zones_covered": 8.0,
+          "coverage_rate": 1.0,
+          "high_vulnerability_uncovered": 0.0,
+          "staging_sites_used": 4.0,
+          "trucks_needed": 10.85,
+          "shelters_out_of_range": 0.0
+        }
+      },
+      "critique": {
+        "accepted": true,
+        "findings": [
+          {
+            "code": "distant_vulnerable_zone",
+            "message": "Zone FL-057-0500 (Hillsborough) scores 0.76 on social vulnerability but lies 41 mi outside the current cone. No evacuation is warranted yet; pre-positioning there is an operator call",
+            "action_id": null
+          },
+          {
+            "code": "distant_vulnerable_zone",
+            "message": "Zone FL-103-0507 (Pinellas) scores 0.63 on social vulnerability but lies 28 mi outside the current cone. No evacuation is warranted yet; pre-positioning there is an operator call",
+            "action_id": null
+          },
+          {
+            "code": "distant_vulnerable_zone",
+            "message": "Zone FL-057-0507 (Hillsborough) scores 0.61 on social vulnerability but lies 44 mi outside the current cone. No evacuation is warranted yet; pre-positioning there is an operator call",
+            "action_id": null
+          }
+        ],
+        "instructions": [],
+        "confidence": 0.54,
+        "reviewed_by_model": null
+      },
+      "memory_recalled": [
+        "Seen in 2 runs: Opening budget fell 14270 spaces short at 2022-09-26T12:00Z; start with a larger opening budget for this scenario",
+        "Seen in 2 runs: Plan at 2022-09-26T12:00Z was refused for: high_vulnerability_zone_unaddressed",
+        "Opening budget fell 4819 spaces short at 2022-09-26T12:00Z; start with a larger opening budget for this scenario",
+        "Opening budget fell 14270 spaces short at 2022-09-26T12:00Z; start with a larger opening budget for this scenario",
+        "Plan at 2022-09-26T12:00Z was refused for: insufficient_shelter_capacity, stale_evidence"
+      ]
+    },
+    "agents": [
+      {
+        "name": "Analyst",
+        "role": "Writes Lightning SQL, runs it through Zetaris, and loads facts with provenance into the World Model",
+        "lane": "fast"
+      },
+      {
+        "name": "Planner",
+        "role": "Builds shelter openings, supply staging and evacuation priority, citing World Model evidence ids",
+        "lane": "deep"
+      },
+      {
+        "name": "Simulator",
+        "role": "Deterministic capacity, coverage, distance and budget checks; returns structured violations",
+        "lane": "fast"
+      },
+      {
+        "name": "Critic",
+        "role": "Verifies every claim against cited evidence, flags stale facts, and can reject the plan",
+        "lane": "judge"
+      },
+      {
+        "name": "Risk",
+        "role": "Classifies actions reversible or irreversible and routes low-confidence or irreversible calls to a human",
+        "lane": "fast"
+      },
+      {
+        "name": "BeliefReviser",
+        "role": "Diffs the World Model on new events, invalidates only dependent decisions, triggers a targeted replan",
+        "lane": "deep"
+      }
+    ],
+    "iterations": 2,
+    "models_used": [
+      "meterless/auto"
+    ],
+    "engines_used": [
+      "hmem",
+      "markovian",
+      "world_model"
+    ],
+    "zetaris_queries": 168,
+    "trace_id": "6d9ae354-99db-41dd-8065-b7f182bf08fa",
+    "log_file": "/Users/kali/pet/pulsar5/logs/trace-ian-replay-24h-markovian.jsonl",
+    "execution_time_seconds": 0.081,
+    "sample_mode": true,
+    "error": null
+  }
+}

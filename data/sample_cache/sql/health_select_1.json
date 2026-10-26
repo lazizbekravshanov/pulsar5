@@ -1,0 +1,13 @@
+{
+  "query_name": "health_select_1",
+  "recorded_from": "scripts/build_replay.py",
+  "note": "connectivity probe",
+  "columns": [
+    "one"
+  ],
+  "rows": [
+    {
+      "one": 1
+    }
+  ]
+}

@@ -1,0 +1,37 @@
+{
+  "query_name": "road_events_open",
+  "recorded_from": "scripts/build_replay.py",
+  "note": "SYNTHETIC closures; the query filters by replay hour",
+  "columns": [
+    "event_id",
+    "route",
+    "county",
+    "status",
+    "lat",
+    "lon",
+    "reported_at",
+    "note"
+  ],
+  "rows": [
+    {
+      "event_id": "RD-001",
+      "route": "I-75 southbound ramp at Corkscrew Rd",
+      "county": "Lee",
+      "status": "closed",
+      "lat": 26.4361,
+      "lon": -81.7795,
+      "reported_at": "2022-09-27T18:00Z",
+      "note": "SYNTHETIC event, generated for this demo"
+    },
+    {
+      "event_id": "RD-002",
+      "route": "Sanibel Causeway",
+      "county": "Lee",
+      "status": "closed",
+      "lat": 26.4615,
+      "lon": -82.0106,
+      "reported_at": "2022-09-28T02:00Z",
+      "note": "SYNTHETIC event, generated for this demo"
+    }
+  ]
+}

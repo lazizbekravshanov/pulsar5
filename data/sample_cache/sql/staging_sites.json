@@ -1,0 +1,55 @@
+{
+  "query_name": "staging_sites",
+  "recorded_from": "scripts/build_replay.py",
+  "note": "SYNTHETIC state logistics points",
+  "columns": [
+    "site_id",
+    "site_name",
+    "county",
+    "lat",
+    "lon",
+    "truck_capacity"
+  ],
+  "rows": [
+    {
+      "site_id": "ST-071",
+      "site_name": "Lee County Logistics Point",
+      "county": "Lee",
+      "lat": 26.553,
+      "lon": -81.8768,
+      "truck_capacity": 14
+    },
+    {
+      "site_id": "ST-015",
+      "site_name": "Charlotte County Logistics Point",
+      "county": "Charlotte",
+      "lat": 26.9079,
+      "lon": -81.9619,
+      "truck_capacity": 14
+    },
+    {
+      "site_id": "ST-115",
+      "site_name": "Sarasota County Logistics Point",
+      "county": "Sarasota",
+      "lat": 27.2233,
+      "lon": -82.4814,
+      "truck_capacity": 10
+    },
+    {
+      "site_id": "ST-103",
+      "site_name": "Pinellas County Logistics Point",
+      "county": "Pinellas",
+      "lat": 27.9282,
+      "lon": -82.7872,
+      "truck_capacity": 8
+    },
+    {
+      "site_id": "ST-057",
+      "site_name": "Hillsborough County Logistics Point",
+      "county": "Hillsborough",
+      "lat": 27.9215,
+      "lon": -82.2719,
+      "truck_capacity": 8
+    }
+  ]
+}

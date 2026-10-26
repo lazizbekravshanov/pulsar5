@@ -1,0 +1,167 @@
+[
+  {
+    "zone_id": "FL-071-0500",
+    "county": "Lee",
+    "population": 10000,
+    "pop_65_plus": 3451,
+    "households_no_vehicle": 668,
+    "disability_count": 2012,
+    "poverty_rate": 21.8,
+    "lat": 26.4682,
+    "lon": -81.7736
+  },
+  {
+    "zone_id": "FL-071-0507",
+    "county": "Lee",
+    "population": 7300,
+    "pop_65_plus": 1842,
+    "households_no_vehicle": 308,
+    "disability_count": 1068,
+    "poverty_rate": 14.7,
+    "lat": 26.6179,
+    "lon": -81.8356
+  },
+  {
+    "zone_id": "FL-071-0514",
+    "county": "Lee",
+    "population": 7800,
+    "pop_65_plus": 1691,
+    "households_no_vehicle": 256,
+    "disability_count": 978,
+    "poverty_rate": 11.9,
+    "lat": 26.8179,
+    "lon": -82.0299
+  },
+  {
+    "zone_id": "FL-015-0500",
+    "county": "Charlotte",
+    "population": 10300,
+    "pop_65_plus": 3746,
+    "households_no_vehicle": 739,
+    "disability_count": 2185,
+    "poverty_rate": 23.3,
+    "lat": 26.8077,
+    "lon": -81.8912
+  },
+  {
+    "zone_id": "FL-015-0507",
+    "county": "Charlotte",
+    "population": 4900,
+    "pop_65_plus": 1358,
+    "households_no_vehicle": 239,
+    "disability_count": 789,
+    "poverty_rate": 16.6,
+    "lat": 26.9452,
+    "lon": -82.0335
+  },
+  {
+    "zone_id": "FL-015-0514",
+    "county": "Charlotte",
+    "population": 8400,
+    "pop_65_plus": 1717,
+    "households_no_vehicle": 248,
+    "disability_count": 992,
+    "poverty_rate": 11.0,
+    "lat": 27.0843,
+    "lon": -82.2278
+  },
+  {
+    "zone_id": "FL-115-0500",
+    "county": "Sarasota",
+    "population": 3600,
+    "pop_65_plus": 1253,
+    "households_no_vehicle": 243,
+    "disability_count": 730,
+    "poverty_rate": 22.1,
+    "lat": 27.1965,
+    "lon": -82.4144
+  },
+  {
+    "zone_id": "FL-115-0507",
+    "county": "Sarasota",
+    "population": 11500,
+    "pop_65_plus": 2969,
+    "households_no_vehicle": 504,
+    "disability_count": 1723,
+    "poverty_rate": 15.1,
+    "lat": 27.3031,
+    "lon": -82.5489
+  },
+  {
+    "zone_id": "FL-115-0514",
+    "county": "Sarasota",
+    "population": 6000,
+    "pop_65_plus": 1254,
+    "households_no_vehicle": 184,
+    "disability_count": 724,
+    "poverty_rate": 11.3,
+    "lat": 27.488,
+    "lon": -82.6703
+  },
+  {
+    "zone_id": "FL-103-0500",
+    "county": "Pinellas",
+    "population": 8500,
+    "pop_65_plus": 3056,
+    "households_no_vehicle": 601,
+    "disability_count": 1783,
+    "poverty_rate": 23.0,
+    "lat": 27.6482,
+    "lon": -82.6206
+  },
+  {
+    "zone_id": "FL-103-0507",
+    "county": "Pinellas",
+    "population": 10100,
+    "pop_65_plus": 2753,
+    "households_no_vehicle": 481,
+    "disability_count": 1599,
+    "poverty_rate": 16.2,
+    "lat": 27.8537,
+    "lon": -82.7334
+  },
+  {
+    "zone_id": "FL-103-0514",
+    "county": "Pinellas",
+    "population": 4700,
+    "pop_65_plus": 1028,
+    "households_no_vehicle": 157,
+    "disability_count": 595,
+    "poverty_rate": 12.1,
+    "lat": 28.0572,
+    "lon": -82.8943
+  },
+  {
+    "zone_id": "FL-057-0500",
+    "county": "Hillsborough",
+    "population": 6500,
+    "pop_65_plus": 2067,
+    "households_no_vehicle": 388,
+    "disability_count": 1203,
+    "poverty_rate": 19.8,
+    "lat": 27.7823,
+    "lon": -82.1978
+  },
+  {
+    "zone_id": "FL-057-0507",
+    "county": "Hillsborough",
+    "population": 4500,
+    "pop_65_plus": 1201,
+    "households_no_vehicle": 207,
+    "disability_count": 697,
+    "poverty_rate": 15.8,
+    "lat": 27.9951,
+    "lon": -82.3852
+  },
+  {
+    "zone_id": "FL-057-0514",
+    "county": "Hillsborough",
+    "population": 8200,
+    "pop_65_plus": 1807,
+    "households_no_vehicle": 277,
+    "disability_count": 1045,
+    "poverty_rate": 12.2,
+    "lat": 28.1332,
+    "lon": -82.4747
+  }
+]

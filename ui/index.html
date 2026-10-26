@@ -1,0 +1,382 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Pulsar 5</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
+<style>
+  :root{
+    --bg:#0d1117; --panel:#151b23; --panel-2:#1b2230; --line:#283040;
+    --ink:#e6edf3; --muted:#8b98a8; --dim:#5f6b7c;
+    --accent:#4da3ff; --warn:#f0a93b; --bad:#f06a5d; --good:#56cc8e; --violet:#a07cf0;
+    --mono:ui-monospace,SFMono-Regular,"SF Mono",Menlo,monospace;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);
+    font:14px/1.5 -apple-system,BlinkMacSystemFont,"Segoe UI",Inter,sans-serif}
+  header{display:flex;align-items:baseline;gap:14px;padding:14px 18px;
+    border-bottom:1px solid var(--line);background:var(--panel)}
+  header h1{margin:0;font-size:17px;letter-spacing:-.01em}
+  header .sub{color:var(--muted);font-size:12.5px}
+  header .badge{margin-left:auto;font:11px var(--mono);color:var(--muted);
+    border:1px solid var(--line);border-radius:999px;padding:3px 10px}
+  main{display:grid;grid-template-columns:320px 1fr 390px;height:calc(100vh - 53px)}
+  .col{overflow-y:auto;padding:14px}
+  .col+.col{border-left:1px solid var(--line)}
+  #map{height:100%;background:#0a0e14}
+  h2{font-size:11px;text-transform:uppercase;letter-spacing:.09em;color:var(--dim);
+    margin:0 0 9px;font-weight:600}
+  h2+h2,section+section{margin-top:18px}
+  label{display:block;font-size:11.5px;color:var(--muted);margin:9px 0 3px}
+  input,select,textarea{width:100%;background:var(--panel-2);color:var(--ink);
+    border:1px solid var(--line);border-radius:6px;padding:7px 9px;font-size:13px;font-family:inherit}
+  select{color-scheme:dark}
+  select[multiple]{padding:4px}
+  select option{background:var(--panel-2);color:var(--ink);padding:3px 5px}
+  select option:checked{background:var(--accent);color:#06121f;font-weight:600}
+  button{background:var(--accent);color:#06121f;border:0;border-radius:6px;
+    padding:9px 13px;font-weight:650;font-size:13px;cursor:pointer;width:100%;margin-top:12px}
+  button:hover{filter:brightness(1.08)}
+  button:disabled{opacity:.5;cursor:not-allowed}
+  button.ghost{background:transparent;color:var(--ink);border:1px solid var(--line);font-weight:500;margin-top:7px}
+  button.ghost:hover{background:var(--panel-2);filter:none}
+  .stat{display:flex;justify-content:space-between;gap:10px;padding:5px 0;
+    border-bottom:1px solid var(--line);font-size:12.5px}
+  .stat:last-child{border-bottom:0}
+  .stat b{font-family:var(--mono);font-weight:600}
+  .act{border:1px solid var(--line);border-left-width:3px;border-radius:6px;
+    padding:9px 11px;margin-bottom:7px;background:var(--panel-2)}
+  .act.evacuate_zone{border-left-color:var(--bad)}
+  .act.open_shelter{border-left-color:var(--good)}
+  .act.stage_supplies{border-left-color:var(--accent)}
+  .act.hold{border-left-color:var(--dim)}
+  .act .top{display:flex;align-items:center;gap:7px;margin-bottom:3px}
+  .act .kind{font:10.5px var(--mono);text-transform:uppercase;letter-spacing:.05em;color:var(--muted)}
+  .act .tgt{font-family:var(--mono);font-size:12px;font-weight:650}
+  .act .detail{font-size:12.5px;color:#cbd5e1}
+  .act .meta{margin-top:5px;display:flex;flex-wrap:wrap;gap:5px}
+  .pill{font:10px var(--mono);padding:2px 7px;border-radius:999px;border:1px solid var(--line);color:var(--muted)}
+  .pill.esc{border-color:var(--warn);color:var(--warn)}
+  .pill.irr{border-color:var(--bad);color:var(--bad)}
+  .pill.ok{border-color:var(--good);color:var(--good)}
+  .pill.ev{border-color:var(--violet);color:var(--violet);cursor:help}
+  .note{font-size:12px;color:var(--muted);background:var(--panel-2);
+    border:1px solid var(--line);border-radius:6px;padding:9px 11px;margin-bottom:8px}
+  .note.warn{border-color:#5a4418;background:#241c0c;color:#f3cd8a}
+  .diff{display:grid;grid-template-columns:1fr 1fr;gap:9px}
+  .diff h3{font:10.5px var(--mono);text-transform:uppercase;color:var(--dim);margin:0 0 6px;letter-spacing:.06em}
+  .trace{font:11px var(--mono);max-height:300px;overflow-y:auto;
+    border:1px solid var(--line);border-radius:6px;background:#0a0e14}
+  .trace div{padding:4px 9px;border-bottom:1px solid #1a2030;white-space:pre-wrap;word-break:break-word}
+  .trace div:last-child{border-bottom:0}
+  .trace .ag{color:var(--accent)}
+  .trace .rej{color:var(--bad)}
+  .trace .acc{color:var(--good)}
+  .trace .eng{color:var(--violet)}
+  .legend{font-size:11.5px;color:var(--muted)}
+  .legend i{display:inline-block;width:9px;height:9px;border-radius:2px;margin-right:6px}
+  .spin{display:inline-block;width:11px;height:11px;border:2px solid var(--line);
+    border-top-color:var(--accent);border-radius:50%;animation:s .7s linear infinite;vertical-align:-1px}
+  @keyframes s{to{transform:rotate(360deg)}}
+  .leaflet-popup-content-wrapper,.leaflet-popup-tip{background:var(--panel);color:var(--ink);
+    border:1px solid var(--line)}
+  .leaflet-popup-content{font-size:12.5px;margin:10px 12px}
+  .leaflet-container{background:#0a0e14}
+  .basemap{filter:invert(1) hue-rotate(185deg) brightness(.72) contrast(.92) saturate(.5)}
+  .leaflet-control-attribution{background:rgba(13,17,23,.78)!important;color:var(--dim)!important;
+    font-size:10px!important;border:1px solid var(--line);border-right:0;border-bottom:0}
+  .leaflet-control-attribution a{color:var(--muted)!important}
+  .leaflet-control-zoom a{background:var(--panel)!important;color:var(--ink)!important;
+    border-color:var(--line)!important}
+  .leaflet-control-zoom a:hover{background:var(--panel-2)!important}
+  @media(max-width:1100px){main{grid-template-columns:1fr;height:auto}#map{height:420px}.col+.col{border-left:0;border-top:1px solid var(--line)}}
+</style>
+</head>
+<body>
+<header>
+  <h1>Pulsar 5</h1>
+  <span class="sub">Disaster response planning &middot; Hurricane Ian replay</span>
+  <span class="badge" id="badge">checking&hellip;</span>
+</header>
+
+<main>
+  <!-- ------------------------------------------------ controls -->
+  <div class="col">
+    <section>
+      <h2>Run</h2>
+      <label>Replay hour (UTC)</label>
+      <select id="hour">
+        <option value="2022-09-26T06:00Z">26 Sep 06:00 &middot; advisory 14</option>
+        <option value="2022-09-26T12:00Z" selected>26 Sep 12:00 &middot; advisory 15 (Tampa)</option>
+        <option value="2022-09-26T21:00Z">26 Sep 21:00 &middot; advisory 17</option>
+        <option value="2022-09-27T09:00Z">27 Sep 09:00 &middot; advisory 19</option>
+        <option value="2022-09-27T16:00Z">27 Sep 16:00 &middot; advisory 21 (south)</option>
+        <option value="2022-09-28T10:00Z">28 Sep 10:00 &middot; advisory 25 (Lee)</option>
+      </select>
+      <label>Counties</label>
+      <select id="region" multiple size="5">
+        <option value="Lee" selected>Lee</option>
+        <option value="Charlotte" selected>Charlotte</option>
+        <option value="Sarasota" selected>Sarasota</option>
+        <option value="Pinellas" selected>Pinellas</option>
+        <option value="Hillsborough" selected>Hillsborough</option>
+      </select>
+      <label>Supply trucks</label><input id="trucks" type="number" value="12" min="1" max="200">
+      <label>Max staging sites</label><input id="staging" type="number" value="4" min="1" max="12">
+      <label>Replay steps (Markovian)</label><input id="steps" type="number" value="1" min="1" max="48">
+      <button id="go">Plan</button>
+    </section>
+
+    <section>
+      <h2>Inject an event</h2>
+      <div class="note">The Belief Reviser diffs the world, invalidates only the decisions that cited a changed fact, and replans those.</div>
+      <button class="ghost" data-ev="track">Advisory 23 &mdash; track shifts south</button>
+      <button class="ghost" data-ev="shelter">Shelter S-071-2 at capacity</button>
+      <button class="ghost" data-ev="road">I-75 ramp closed</button>
+    </section>
+
+    <section>
+      <h2>Map key</h2>
+      <div class="legend">
+        <div><i style="background:#f06a5d"></i>evacuating zone</div>
+        <div><i style="background:#8b98a8"></i>zone, no action</div>
+        <div><i style="background:#56cc8e"></i>shelter opened</div>
+        <div><i style="background:#4da3ff"></i>staging site</div>
+        <div><i style="background:rgba(240,169,59,.5)"></i>forecast cone</div>
+      </div>
+    </section>
+  </div>
+
+  <!-- ------------------------------------------------ map -->
+  <div id="map"></div>
+
+  <!-- ------------------------------------------------ plan -->
+  <div class="col">
+    <section id="out">
+      <h2>Plan</h2>
+      <div class="note">Choose an hour and press Plan. Every action cites World Model fact ids, is checked by the simulator, and is reviewed by the Critic before anything commits.</div>
+    </section>
+  </div>
+</main>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+<script>
+const $ = s => document.querySelector(s);
+const esc = s => String(s ?? '').replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+
+const map = L.map('map', {zoomControl:true, attributionControl:false}).setView([27.1,-82.2], 8);
+// OpenStreetMap standard tiles: free, no key, and darkened with a CSS filter
+// so the basemap recedes behind the data. A basemap that demands a key is a
+// liability in a live demo.
+L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
+  maxZoom: 19,
+  className: 'basemap',
+  attribution: '&copy; OpenStreetMap contributors'
+}).addTo(map);
+L.control.attribution({prefix:false, position:'bottomright'}).addTo(map);
+let layer = L.layerGroup().addTo(map);
+
+let runId = null, world = null, lastPlan = null;
+
+/* ---------------------------------------------------------- health */
+fetch('/health').then(r=>r.json()).then(h=>{
+  const z = h.zetaris.reachable ? 'Zetaris live' : (h.sample_mode ? 'Zetaris cached' : 'Zetaris down');
+  const n = h.nightshift.reachable ? 'Nightshift live' : (h.sample_mode ? 'Nightshift recorded' : 'Nightshift down');
+  $('#badge').textContent = `${z} · ${n}${h.sample_mode ? ' · SAMPLE_MODE' : ''}`;
+}).catch(()=>{ $('#badge').textContent = 'api unreachable'; });
+
+/* ---------------------------------------------------------- run */
+$('#go').onclick = async () => {
+  const btn = $('#go'); btn.disabled = true; btn.innerHTML = '<span class="spin"></span> planning';
+  const region = [...$('#region').selectedOptions].map(o=>o.value);
+  const hour = $('#hour').value;
+  runId = `ui-${hour}-${region.length}c-${Date.now()}`;
+  try{
+    const res = await fetch('/run', {method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({run_id: runId, input:{
+        scenario:'ian_2022', region, replay_hour: hour,
+        goal:'Plan shelter openings, supply staging and evacuation priority for the next 24 hours.',
+        constraints:{supply_trucks:+$('#trucks').value, staging_sites_max:+$('#staging').value}},
+        options:{sample_mode:true, max_iterations:3, replay_steps:+$('#steps').value}})});
+    const data = await res.json();
+    if(data.status === 'failed'){
+      $('#out').innerHTML = `<h2>Plan</h2><div class="note warn"><b>${esc(data.error?.type)}</b><br>${esc(data.error?.message)}</div>`;
+      return;
+    }
+    world = await (await fetch(`/runs/${runId}/world`)).json();
+    lastPlan = data.output.plan;
+    renderRun(data);
+    draw(data.output.plan);
+    loadTrace();
+  }catch(e){ $('#out').innerHTML = `<h2>Plan</h2><div class="note warn">${esc(e.message)}</div>`; }
+  finally{ btn.disabled = false; btn.textContent = 'Plan'; }
+};
+
+/* ---------------------------------------------------------- events */
+const EVENTS = {
+  track:{type:'advisory_update', payload:{advisory_number:23, issued_at:'2022-09-27T21:00Z',
+    center_lat:25.4, center_lon:-82.9, max_wind_kt:130, forecast_landfall_county:'Lee',
+    cone_polygon:[[27.45,-82.75],[27.45,-81.55],[26.60,-81.40],[26.10,-81.70],[26.15,-82.40],[26.90,-82.80]]}},
+  shelter:{type:'shelter_capacity', payload:{shelter_id:'S-071-2', capacity:1500,
+    current_occupancy:1500, status:'at_capacity', updated_at:'2022-09-27T14:00Z'}},
+  road:{type:'road_closure', payload:{event_id:'RD-001', route:'I-75 southbound ramp at Corkscrew Rd',
+    county:'Lee', status:'closed', lat:26.4361, lon:-81.7795, reported_at:'2022-09-27T18:00Z',
+    affects_staging_site:'ST-071'}}
+};
+
+document.querySelectorAll('[data-ev]').forEach(b => b.onclick = async () => {
+  if(!runId){ alert('Run a plan first.'); return; }
+  b.disabled = true; const label = b.textContent; b.innerHTML = '<span class="spin"></span> revising';
+  try{
+    const res = await fetch('/events', {method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({run_id: runId, event: EVENTS[b.dataset.ev]})});
+    if(!res.ok){ alert((await res.json()).detail); return; }
+    const data = await res.json();
+    world = await (await fetch(`/runs/${runId}/world`)).json();
+    renderEvent(data);
+    if(data.revised_plan){ lastPlan = data.revised_plan; draw(data.revised_plan); }
+    loadTrace();
+  } finally { b.disabled = false; b.textContent = label; }
+});
+
+/* ---------------------------------------------------------- render */
+function actionCard(a, escalated){
+  const ev = (a.evidence_ids||[]).length;
+  return `<div class="act ${esc(a.kind)}">
+    <div class="top"><span class="kind">${esc(a.kind.replace(/_/g,' '))}</span>
+      <span class="tgt">${esc(a.target)}</span></div>
+    <div class="detail">${esc(a.detail)}</div>
+    <div class="meta">
+      <span class="pill">p${a.priority}</span>
+      <span class="pill">conf ${a.confidence.toFixed(2)}</span>
+      <span class="pill ${a.reversible?'ok':'irr'}">${a.reversible?'reversible':'irreversible'}</span>
+      ${escalated.has(a.action_id)?'<span class="pill esc">human approval</span>':'<span class="pill ok">auto-commit</span>'}
+      <span class="pill ev" title="${esc((a.evidence_ids||[]).join('\n'))}">${ev} evidence</span>
+    </div></div>`;
+}
+
+function renderRun(d){
+  const o = d.output, m = o.simulation?.metrics || {};
+  const escalated = new Set(o.escalations.map(e=>e.action_id));
+  const order = {evacuate_zone:0, open_shelter:1, stage_supplies:2, hold:3};
+  const acts = [...o.plan.actions].sort((a,b)=>(order[a.kind]-order[b.kind])||(a.priority-b.priority));
+
+  $('#out').innerHTML = `
+    <h2>Outcome</h2>
+    <div class="stat"><span>status</span><b>${esc(d.status)}</b></div>
+    <div class="stat"><span>critic</span><b>${o.critique.accepted?'accepted':'refused'} @ ${o.critique.confidence.toFixed(2)}</b></div>
+    <div class="stat"><span>loop iterations</span><b>${d.iterations}</b></div>
+    <div class="stat"><span>expected evacuees</span><b>${(m.expected_evacuees||0).toLocaleString()}</b></div>
+    <div class="stat"><span>open shelter spaces</span><b>${(m.open_shelter_capacity||0).toLocaleString()}</b></div>
+    <div class="stat"><span>capacity margin</span><b style="color:${(m.capacity_margin||0)>=0?'var(--good)':'var(--bad)'}">${(m.capacity_margin||0).toLocaleString()}</b></div>
+    <div class="stat"><span>in-cone coverage</span><b>${((m.coverage_rate||0)*100).toFixed(0)}%</b></div>
+    <div class="stat"><span>held for a human</span><b>${o.escalations.length} of ${o.plan.actions.length}</b></div>
+    <div class="stat"><span>Zetaris queries</span><b>${d.zetaris_queries}</b></div>
+    <div class="stat"><span>engines</span><b>${o.memory_recalled.length?'WM · H-MEM · MK':'WM · MK'}</b></div>
+    <div class="stat"><span>models</span><b style="font-size:10.5px">${esc(d.models_used.join(', '))||'—'}</b></div>
+    <div class="stat"><span>elapsed</span><b>${d.execution_time_seconds}s</b></div>
+
+    ${o.memory_recalled.length?`<h2>Recalled from earlier runs</h2>${o.memory_recalled.map(l=>`<div class="note">${esc(l)}</div>`).join('')}`:''}
+    ${o.unresolved_issues.length?`<h2>Unresolved &mdash; operator decision</h2>${o.unresolved_issues.map(u=>`<div class="note warn">${esc(u)}</div>`).join('')}`:''}
+
+    <h2>Actions (${acts.length})</h2>${acts.map(a=>actionCard(a, escalated)).join('')}
+    <h2>Trace</h2><div class="trace" id="trace">loading&hellip;</div>`;
+}
+
+function renderEvent(d){
+  const dd = d.diff || {added:[],removed:[],changed:[]};
+  const escalated = new Set(d.escalations.map(e=>e.action_id));
+  const county = t => ({'071':'Lee','015':'Charlotte','115':'Sarasota','103':'Pinellas','057':'Hillsborough'}[t.split('-')[1]] || t);
+  const footprint = p => { const c={}; (p?.actions||[]).filter(a=>a.kind==='evacuate_zone')
+      .forEach(a=>{const k=county(a.target); c[k]=(c[k]||0)+1;});
+    return Object.keys(c).length ? Object.entries(c).sort().map(([k,v])=>`${k} ${v}`).join(', ') : 'none'; };
+
+  $('#out').insertAdjacentHTML('afterbegin', `
+    <h2>Change of mind &mdash; ${esc(d.event_type)}</h2>
+    <div class="stat"><span>beliefs changed</span><b>${d.changed_beliefs.length}</b></div>
+    <div class="stat"><span>decisions invalidated</span><b style="color:var(--bad)">${d.invalidated_decisions.length}</b></div>
+    <div class="stat"><span>decisions preserved</span><b style="color:var(--good)">${d.preserved_decisions.length}</b></div>
+    <div class="stat"><span>plan diff</span><b>+${dd.added.length} / &minus;${dd.removed.length} / ~${dd.changed.length}</b></div>
+    <div class="diff" style="margin-top:12px">
+      <div><h3>before</h3><div class="note">${esc(footprint(d.previous_plan))}</div></div>
+      <div><h3>after</h3><div class="note">${esc(footprint(d.revised_plan))}</div></div>
+    </div>
+    ${dd.added.length?`<h2>Newly ordered</h2>${dd.added.map(a=>actionCard(a, escalated)).join('')}`:''}
+    ${dd.removed.length?`<h2>Stood down (${dd.removed.length})</h2><div class="note">${dd.removed.map(esc).join(', ')}</div>`:''}
+    <hr style="border:0;border-top:1px solid var(--line);margin:18px 0">`);
+}
+
+/* ---------------------------------------------------------- map */
+function draw(plan){
+  layer.clearLayers();
+  if(!world) return;
+  const ents = Object.values(world.entities || {});
+  const evac = new Set(plan.actions.filter(a=>a.kind==='evacuate_zone').map(a=>a.target));
+  const opened = new Set(plan.actions.filter(a=>a.kind==='open_shelter').map(a=>a.target));
+  const staged = new Set(plan.actions.filter(a=>a.kind==='stage_supplies').map(a=>a.target));
+
+  const cone = world.beliefs?.['hazard:cone_polygon']?.value;
+  if(Array.isArray(cone) && cone.length>2){
+    L.polygon(cone, {color:'#f0a93b', weight:1.5, fillOpacity:.1, dashArray:'5,5'})
+      .bindPopup(`forecast cone &middot; advisory ${esc(world.beliefs['hazard:advisory_number']?.value)}`).addTo(layer);
+  }
+  const centre = world.beliefs?.['hazard:center']?.value;
+  if(centre?.lat) L.circleMarker([centre.lat, centre.lon],
+    {radius:8, color:'#f0a93b', weight:2, fillColor:'#f0a93b', fillOpacity:.55})
+    .bindPopup(`storm centre &middot; ${esc(world.beliefs['hazard:max_wind_kt']?.value)} kt`).addTo(layer);
+
+  ents.forEach(e => {
+    if(e.lat == null || e.lon == null) return;
+    if(e.kind === 'zone'){
+      const on = evac.has(e.entity_id);
+      L.circleMarker([e.lat, e.lon], {radius: 5 + (e.vulnerability_score||0)*7,
+        color: on?'#f06a5d':'#8b98a8', weight: on?2:1,
+        fillColor: on?'#f06a5d':'#8b98a8', fillOpacity: on?.55:.2})
+        .bindPopup(`<b>${esc(e.entity_id)}</b><br>${esc(e.county)} County<br>
+          population ${(e.population||0).toLocaleString()}<br>
+          vulnerability <b>${(e.vulnerability_score||0).toFixed(2)}</b><br>
+          ${on?'<span style="color:#f06a5d">evacuation ordered</span>':'no action'}`).addTo(layer);
+    } else if(e.kind === 'shelter'){
+      const on = opened.has(e.entity_id);
+      const free = Math.max(0,(e.capacity||0)-(e.current_occupancy||0));
+      L.marker([e.lat, e.lon], {icon: L.divIcon({className:'', html:
+        `<div style="width:11px;height:11px;border-radius:2px;background:${on?'#56cc8e':'#2f3a4a'};
+          border:1.5px solid ${on?'#56cc8e':'#49566a'}"></div>`, iconSize:[11,11]})})
+        .bindPopup(`<b>${esc(e.name||e.entity_id)}</b><br>${esc(e.entity_id)} &middot; ${esc(e.county)}<br>
+          capacity ${(e.capacity||0).toLocaleString()}, free <b>${free.toLocaleString()}</b><br>
+          ${on?'<span style="color:#56cc8e">opened by this plan</span>':'not opened'}`).addTo(layer);
+    } else if(e.kind === 'staging_site'){
+      const on = staged.has(e.entity_id);
+      L.marker([e.lat, e.lon], {icon: L.divIcon({className:'', html:
+        `<div style="width:0;height:0;border-left:7px solid transparent;border-right:7px solid transparent;
+          border-bottom:12px solid ${on?'#4da3ff':'#36425a'}"></div>`, iconSize:[14,12]})})
+        .bindPopup(`<b>${esc(e.name||e.entity_id)}</b><br>${esc(e.county)}<br>${on?'<span style="color:#4da3ff">staging here</span>':'not used'}`).addTo(layer);
+    } else if(e.kind === 'road_event' && e.status === 'closed'){
+      L.circleMarker([e.lat, e.lon], {radius:5, color:'#f06a5d', weight:2, fillOpacity:0})
+        .bindPopup(`<b>closed</b><br>${esc(e.route)}`).addTo(layer);
+    }
+  });
+
+  const pts = ents.filter(e=>e.lat!=null).map(e=>[e.lat,e.lon]);
+  if(pts.length) map.fitBounds(L.latLngBounds(pts).pad(.12));
+}
+
+/* ---------------------------------------------------------- trace */
+async function loadTrace(){
+  const el = $('#trace'); if(!el) return;
+  const text = await (await fetch(`/runs/${runId}/trace`)).text();
+  el.innerHTML = text.trim().split('\n').map(line => {
+    let r; try{ r = JSON.parse(line); }catch{ return ''; }
+    const cls = r.action==='reject_plan' ? 'rej' : r.action==='accept_plan' ? 'acc' : r.engine ? 'eng' : '';
+    const bits = [r.model && `model=${r.model}`, r.engine && `engine=${r.engine}`,
+      r.row_count!=null && `rows=${r.row_count}`, r.confidence!=null && `conf=${r.confidence}`]
+      .filter(Boolean).join(' ');
+    return `<div class="${cls}"><span class="ag">${esc(r.agent_name)}</span> ${esc(r.action)} ${esc(bits)}
+${esc(r.output_summary||'')}</div>`;
+  }).join('');
+  el.scrollTop = 0;
+}
+</script>
+</body>
+</html>

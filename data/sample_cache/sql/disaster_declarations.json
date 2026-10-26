@@ -1,0 +1,43 @@
+{
+  "query_name": "disaster_declarations",
+  "recorded_from": "scripts/build_replay.py",
+  "note": "OpenFEMA DR-4673 county list for Hurricane Ian",
+  "columns": [
+    "disaster_number",
+    "declaration_date",
+    "incident_type",
+    "county"
+  ],
+  "rows": [
+    {
+      "disaster_number": 4673,
+      "declaration_date": "2022-09-29",
+      "incident_type": "Hurricane",
+      "county": "Lee"
+    },
+    {
+      "disaster_number": 4673,
+      "declaration_date": "2022-09-29",
+      "incident_type": "Hurricane",
+      "county": "Charlotte"
+    },
+    {
+      "disaster_number": 4673,
+      "declaration_date": "2022-09-29",
+      "incident_type": "Hurricane",
+      "county": "Sarasota"
+    },
+    {
+      "disaster_number": 4673,
+      "declaration_date": "2022-09-29",
+      "incident_type": "Hurricane",
+      "county": "Pinellas"
+    },
+    {
+      "disaster_number": 4673,
+      "declaration_date": "2022-09-29",
+      "incident_type": "Hurricane",
+      "county": "Hillsborough"
+    }
+  ]
+}
