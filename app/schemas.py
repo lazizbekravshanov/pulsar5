@@ -132,6 +132,7 @@ class RunResponse(BaseModel):
     agents: list[AgentCard] = Field(default_factory=list)
     iterations: int = 0
     models_used: list[str] = Field(default_factory=list)
+    models_attempted: list[str] = Field(default_factory=list)
     engines_used: list[str] = Field(default_factory=list)
     zetaris_queries: int = 0
     trace_id: str = ""

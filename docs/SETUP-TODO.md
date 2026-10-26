@@ -81,14 +81,28 @@ Those three now read committed extracts served from this repo's raw GitHub URL a
 
 ## Still blocking the submission
 
-### 1. Nightshift NVIDIA key — mandatory
+### 1. Nightshift NVIDIA key — mandatory, and definitively diagnosed
 
-Remus's correction made Nightshift a **hard requirement**, not optional. The runtime is up (`/healthz` 200) but a real chat call returns **502**: Nightshift reached NVIDIA and NVIDIA refused the key.
+Remus's correction made Nightshift a **hard requirement**. Everything on our side now works:
 
-1. New key at `build.nvidia.com/models` on an account that can use Nemotron
-2. Nightshift → **Setup → Providers → NVIDIA**, paste, save, refresh models
-3. Console → copy the Runtime URL and token into this repo's `.env`
-4. Pin the lanes from whatever `run.py --check` reports as Nemotron-backed
+| | |
+|---|---|
+| Runtime token | **works** — `/v1/models` returns 19 models |
+| Nemotron routes visible | **5**, 3 of them chat-capable |
+| Lanes pinned | **yes**, all three to real Nemotron routes |
+| A real chat call | **502 `provider_auth_failed`** |
+
+The error leaves no ambiguity:
+
+> "The provider refused the API key saved in Setup ▸ Providers (401/403). This is the provider key, not your Runtime key: paste a current key, or check the account can use this model."
+
+NVIDIA is refusing the key. Nightshift, the runtime token, the catalogue and the routing are all fine. **This cannot be fixed in our code.**
+
+Note the second half of that message — "or check the account can use this model". It may be an entitlement problem rather than a stale key, so when you generate a replacement, confirm the account can actually call Nemotron.
+
+1. New key at `build.nvidia.com/models`, on an account entitled to Nemotron
+2. Nightshift → **Setup → Providers → NVIDIA**, paste, save, refresh the model list
+3. Nothing else to change — the lanes are already pinned in `.env`:
 
 ```env
 METERLESS_MODEL_FAST=nvidia/nemotron-3.5-lightning-30b-a3b
@@ -96,7 +110,16 @@ METERLESS_MODEL_DEEP=nvidia/nemotron-3-ultra-550b-a55b
 METERLESS_MODEL_JUDGE=nvidia/nemotron-3.5-bolt-e4b
 ```
 
-Until this works, `models_used` reads `meterless/auto` and every agent logs `"status": "fallback"`. **Do not narrate Nemotron over a fallback line in the video.**
+Confirm with one command — `models_used` is empty while the provider refuses, and fills in the moment it works:
+
+```bash
+./.venv/bin/python run.py --input input_examples/example_1.json --live \
+  | grep -o '"models_used":[^]]*]'
+```
+
+**How the system behaves meanwhile, and why that is safe.** Each agent calls its pinned Nemotron route, gets 502, retries twice with backoff, logs `"status": "fallback"` with the real error, and runs its own deterministic path. Verified: **zero** silent fallbacks to the local WebLLM Llama that Nightshift would otherwise download. The plan still comes out, and the trace never claims a model answered when it did not.
+
+`models_used` now lists only models that **actually served content**; `models_attempted` lists what was requested. While NVIDIA refuses, `models_used` is `[]`. That separation is deliberate: reporting an attempted-but-refused model as "used" would overclaim the exact sponsor integration judges are checking.
 
 ### 2. HackOS submission
 

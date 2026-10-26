@@ -28,7 +28,11 @@ def test_example_1_runs_and_is_fully_traceable():
     assert response.output.plan.actions
     assert response.zetaris_queries > 0, "every fact must come through Zetaris"
     assert {"world_model", "hmem", "markovian"} <= set(response.engines_used)
-    assert response.models_used, "the model behind each call must be logged"
+    # models_attempted is the one that must always be populated: it is the model
+    # named on every request. models_used holds only models that actually served
+    # content, so in SAMPLE_MODE with no recorded responses it is correctly empty.
+    assert response.models_attempted, "the model behind each call must be logged"
+    assert set(response.models_used) <= set(response.models_attempted)
     assert Path(response.log_file).exists()
     assert response.execution_time_seconds < 60
 

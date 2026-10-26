@@ -61,7 +61,12 @@ class Tracer:
         # run from start to finish and not every run that ever used that id.
         self.log_file.write_text("", encoding="utf-8")
         self.events: list[dict[str, Any]] = []
+        # Models that actually returned content, kept apart from models merely
+        # attempted. A provider that refuses every request still puts its model
+        # name on the request line, and reporting that as "used" would overclaim
+        # exactly the sponsor integration a judge is checking.
         self.models_used: list[str] = []
+        self.models_attempted: list[str] = []
         self.engines_used: list[str] = []
         self.zetaris_queries = 0
 
@@ -106,9 +111,13 @@ class Tracer:
 
         line = redact(json.dumps(record, default=str), self._secrets)
 
+        served = status == "success" and not (extra or {}).get("fallback_used")
         with self._lock:
-            if model and model not in self.models_used:
-                self.models_used.append(model)
+            if model:
+                if model not in self.models_attempted:
+                    self.models_attempted.append(model)
+                if served and model not in self.models_used:
+                    self.models_used.append(model)
             if engine and engine not in self.engines_used:
                 self.engines_used.append(engine)
             if zetaris_query:
@@ -149,6 +158,7 @@ class Tracer:
     def counts(self) -> dict[str, Any]:
         return {
             "models_used": list(self.models_used),
+            "models_attempted": list(self.models_attempted),
             "engines_used": list(self.engines_used),
             "zetaris_queries": self.zetaris_queries,
             "events": len(self.events),
