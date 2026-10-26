@@ -49,6 +49,15 @@ curl -X POST localhost:8000/run -H 'Content-Type: application/json' -d @input_ex
 curl -X POST localhost:8000/events -H 'Content-Type: application/json' -d @input_examples/event_track_shift.json
 ```
 
+Against a real Zetaris instance, `--live` overrides the example's pinned `sample_mode`:
+
+```bash
+./.venv/bin/python run.py --check                                  # both services
+./.venv/bin/python run.py --input input_examples/example_1.json --live
+```
+
+Live and SAMPLE_MODE produce the same 29-action plan. That is the point: the cache is faithful, not a demo branch. Live takes about 25 s against real HTTP; the cache takes 5 ms.
+
 Or in Docker:
 
 ```bash

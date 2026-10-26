@@ -21,5 +21,5 @@ SELECT
     declaration.declarationDate   AS declaration_date,
     declaration.incidentType      AS incident_type,
     declaration.designatedArea    AS county
-FROM fema_declarations_raw
+FROM PULSAR5_REST.fema_declarations_raw
 LATERAL VIEW explode(DisasterDeclarationsSummaries) AS declaration;

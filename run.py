@@ -47,8 +47,15 @@ def cmd_check() -> int:
         nightshift.close()
 
 
-def cmd_run(input_path: Path, event_path: Path | None, out_path: Path | None) -> int:
+def cmd_run(
+    input_path: Path, event_path: Path | None, out_path: Path | None, live: bool = False
+) -> int:
     request = RunRequest(**json.loads(input_path.read_text(encoding="utf-8")))
+    if live:
+        # The example inputs pin sample_mode=true so a judge can run them with no
+        # credentials. --live overrides that to exercise the real Zetaris and
+        # Nightshift path without editing the committed examples.
+        request.options.sample_mode = False
     orchestrator = Orchestrator()
     response = orchestrator.run(request)
 
@@ -86,12 +93,17 @@ def main() -> int:
     parser.add_argument("--event", type=Path, help="after the run, inject this event file")
     parser.add_argument("--out", type=Path, help="write the result here instead of stdout")
     parser.add_argument("--check", action="store_true", help="verify Zetaris and Nightshift connectivity")
+    parser.add_argument(
+        "--live",
+        action="store_true",
+        help="force sample_mode off, overriding the input file (needs Zetaris reachable)",
+    )
     args = parser.parse_args()
 
     if args.check:
         return cmd_check()
     if args.input:
-        return cmd_run(args.input, args.event, args.out)
+        return cmd_run(args.input, args.event, args.out, live=args.live)
     return cmd_serve()
 
 

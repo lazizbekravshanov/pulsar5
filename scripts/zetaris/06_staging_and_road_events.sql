@@ -26,7 +26,7 @@ SELECT
     site.lat            AS lat,
     site.lon            AS lon,
     site.truck_capacity AS truck_capacity
-FROM facilities_raw
+FROM PULSAR5_REST.facilities_raw
 LATERAL VIEW explode(staging_sites) AS site;
 
 CREATE LIGHTNING REST TABLE road_events_raw FROM PULSAR5_REST REQUEST(
@@ -46,4 +46,4 @@ SELECT
     lat,
     lon,
     reported_at
-FROM road_events_raw;
+FROM PULSAR5_REST.road_events_raw;

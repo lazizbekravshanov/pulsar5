@@ -32,5 +32,5 @@ SELECT
     warning.eventid      AS event_id,
     warning.issue        AS issued_at,
     warning.expire       AS expires_at
-FROM iem_sbw_raw
+FROM PULSAR5_REST.iem_sbw_raw
 LATERAL VIEW explode(sbws) AS warning;

@@ -30,4 +30,4 @@ SELECT
     max_wind_kt,
     forecast_landfall_county,
     cone_polygon
-FROM storm_advisories_raw;
+FROM PULSAR5_REST.storm_advisories_raw;

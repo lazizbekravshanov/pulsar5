@@ -66,6 +66,9 @@ class ZetarisClient:
         self.tracer = tracer
         self.agent_name = agent_name
         self.cache_dir = cache_dir or (SAMPLE_CACHE_DIR / "sql")
+        # Zetaris caps rows per request; registration DDL returns almost none,
+        # but the Analyst's reads need room for every shelter and tract.
+        self.row_limit = 5000
         self._client: httpx.Client | None = None
 
     # ------------------------------------------------------------------ http
@@ -163,7 +166,16 @@ class ZetarisClient:
             raise ZetarisUnavailable("ZETARIS_REST_URL / ZETARIS_API_KEY are not set")
 
         url = f"{self.settings.zetaris_rest_url}/sql-editor/sqls/run"
-        response = self._http().post(url, headers=self._headers(), json={"sql": sql})
+        # Zetaris rejects a bare {"sql": ...} with "Missing required field at
+        # 'queryId', Missing required field at 'source'". This is the shape its
+        # own reference client sends (getting-started/scripts/zetaris_sql.py).
+        body = {
+            "queryId": str(uuid.uuid4()),
+            "sql": sql,
+            "source": "SqlEditor",
+            "limit": self.row_limit,
+        }
+        response = self._http().post(url, headers=self._headers(), json=body)
         response.raise_for_status()
         payload = response.json()
         rows, columns = _parse_payload(payload)
@@ -272,7 +284,14 @@ def _parse_payload(payload: Any) -> tuple[list[dict[str, Any]], list[str]]:
 
 
 def _columns_from(payload: dict[str, Any]) -> list[str]:
-    raw = payload.get("columns") or payload.get("schema") or payload.get("fields")
+    # Zetaris names the column list "headers"; other shapes are kept for
+    # tolerance across versions.
+    raw = (
+        payload.get("headers")
+        or payload.get("columns")
+        or payload.get("schema")
+        or payload.get("fields")
+    )
     if isinstance(raw, list):
         out = []
         for col in raw:
