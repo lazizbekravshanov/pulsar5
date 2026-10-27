@@ -283,6 +283,10 @@ L.control.attribution({prefix:false, position:'bottomright'}).addTo(map);
 let layer = L.layerGroup().addTo(map);
 
 let runId = null, world = null;
+/* The request that built the current plan, so an event can rebuild the
+   world it was planned against. Cleared and refilled on every Plan. */
+let planRequest = null;
+const replayed = new Set();
 
 /* ---------------------------------------------------------- health */
 fetch('/health').then(r=>r.json()).then(h=>{
@@ -299,13 +303,15 @@ $('#go').onclick = async () => {
   const region = [...$('#region').selectedOptions].map(o=>o.value);
   const hour = $('#hour').value;
   runId = `ui-${hour}-${region.length}c-${Date.now()}`;
+  planRequest = {run_id: runId, input:{
+    scenario:'ian_2022', region, replay_hour: hour,
+    goal:'Plan shelter openings, supply staging and evacuation priority for the next 24 hours.',
+    constraints:{supply_trucks:+$('#trucks').value, staging_sites_max:+$('#staging').value}},
+    options:{max_iterations:3, replay_steps:+$('#steps').value}};
+  replayed.clear();
   try{
     const res = await fetch('/run', {method:'POST', headers:{'Content-Type':'application/json'},
-      body: JSON.stringify({run_id: runId, input:{
-        scenario:'ian_2022', region, replay_hour: hour,
-        goal:'Plan shelter openings, supply staging and evacuation priority for the next 24 hours.',
-        constraints:{supply_trucks:+$('#trucks').value, staging_sites_max:+$('#staging').value}},
-        options:{max_iterations:3, replay_steps:+$('#steps').value}})});
+      body: JSON.stringify(planRequest)});
     const data = await res.json();
     if(data.status === 'failed'){
       $('#out').innerHTML = `<h2>The run stopped</h2><p class="note warn">${esc(data.error?.message)}</p>`;
@@ -333,12 +339,28 @@ const EVENTS = {
 
 document.querySelectorAll('[data-ev]').forEach(b => b.onclick = async () => {
   if(!runId){ $('#out').insertAdjacentHTML('afterbegin','<p class="note warn">Make a plan first, then change the world.</p>'); return; }
-  b.disabled = true; const label = b.textContent; b.innerHTML = '<span class="spin"></span>Revising';
+  const key = b.dataset.ev;
+  b.disabled = true; const label = b.textContent;
   try{
+    /* Replaying an event the world already carries diffs against a world
+       that has it, so almost nothing comes back changed. Rebuild the
+       planned world first and the replay is a real change of mind again. */
+    if(replayed.has(key)){
+      b.innerHTML = '<span class="spin"></span>Re-planning';
+      const again = await fetch('/run', {method:'POST', headers:{'Content-Type':'application/json'},
+        body: JSON.stringify(planRequest)});
+      if(!again.ok){
+        $('#out').insertAdjacentHTML('afterbegin','<p class="note warn">Could not rebuild the plan, so this replay was skipped. Plan again.</p>');
+        return;
+      }
+      replayed.clear();
+    }
+    b.innerHTML = '<span class="spin"></span>Revising';
     const res = await fetch('/events', {method:'POST', headers:{'Content-Type':'application/json'},
-      body: JSON.stringify({run_id: runId, event: EVENTS[b.dataset.ev]})});
+      body: JSON.stringify({run_id: runId, event: EVENTS[key]})});
     if(!res.ok){ return; }
     const data = await res.json();
+    replayed.add(key);
     world = await (await fetch(`/runs/${runId}/world`)).json();
     renderEvent(data);
     if(data.revised_plan) draw(data.revised_plan);
