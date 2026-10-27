@@ -11,8 +11,9 @@ import json
 import sys
 import threading
 import uuid
+from collections.abc import Iterable
 from pathlib import Path
-from typing import Any, Iterable
+from typing import Any
 
 from app.config import LOGS_DIR
 from app.schemas import utc_now_iso

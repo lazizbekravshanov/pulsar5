@@ -278,7 +278,7 @@ def _parse_payload(payload: Any) -> tuple[list[dict[str, Any]], list[str]]:
     columns = _columns_from(payload)
     matrix = payload.get("data") or payload.get("values")
     if columns and isinstance(matrix, list) and matrix and isinstance(matrix[0], list):
-        return [dict(zip(columns, row)) for row in matrix], columns
+        return [dict(zip(columns, row, strict=False)) for row in matrix], columns
 
     return [], columns
 

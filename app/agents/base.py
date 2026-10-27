@@ -28,7 +28,7 @@ class AgentContext:
     world: WorldModel
     zetaris: ZetarisClient
     nightshift: NightshiftClient
-    memory: "HMem"
+    memory: HMem
 
 
 class Agent:

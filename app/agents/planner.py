@@ -137,10 +137,13 @@ class Planner(Agent):
         # every iteration, burns its whole budget and escalates something it could
         # simply have fixed.
         for finding in (critique.findings if critique else []):
-            if finding.code == "high_vulnerability_zone_unaddressed" and finding.zone_id:
-                if finding.zone_id not in params.forced_zones:
-                    params.forced_zones.append(finding.zone_id)
-                    reasons.append(f"cover {finding.zone_id}, flagged by the Critic")
+            if (
+                finding.code == "high_vulnerability_zone_unaddressed"
+                and finding.zone_id
+                and finding.zone_id not in params.forced_zones
+            ):
+                params.forced_zones.append(finding.zone_id)
+                reasons.append(f"cover {finding.zone_id}, flagged by the Critic")
 
         for instruction in (critique.instructions if critique else []):
             reasons.append(instruction)

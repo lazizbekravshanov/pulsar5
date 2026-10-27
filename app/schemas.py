@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from typing import Any, Literal
 
 from pydantic import BaseModel, Field
@@ -12,7 +12,7 @@ EventType = Literal["advisory_update", "shelter_capacity", "road_closure"]
 
 
 def utc_now_iso() -> str:
-    return datetime.now(timezone.utc).isoformat(timespec="seconds").replace("+00:00", "Z")
+    return datetime.now(UTC).isoformat(timespec="seconds").replace("+00:00", "Z")
 
 
 # ---------------------------------------------------------------- input
@@ -173,7 +173,7 @@ class RunResponse(BaseModel):
     log_file: str = ""
     execution_time_seconds: float = 0.0
     sample_mode: bool = False
-    error: "StructuredError | None" = None
+    error: StructuredError | None = None
 
 
 class StructuredError(BaseModel):

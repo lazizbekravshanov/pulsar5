@@ -18,8 +18,8 @@ from __future__ import annotations
 from datetime import datetime, timedelta
 
 from app.agents.base import Agent
-from app.schemas import Critique, CritiqueFinding, Plan, SimulationResult
 from app.agents.planner import EVAC_BUFFER_MILES
+from app.schemas import Critique, CritiqueFinding, Plan, SimulationResult
 from app.sim.checks import HIGH_VULNERABILITY_THRESHOLD
 from app.sim.geo import distance_to_nearest, point_in_polygon
 
@@ -56,7 +56,7 @@ def _is_unfixable(code: str) -> bool:
 
 def _parse_ts(value: str) -> datetime | None:
     try:
-        return datetime.fromisoformat(str(value).replace("Z", "+00:00"))
+        return datetime.fromisoformat(str(value))
     except (ValueError, TypeError):
         return None
 

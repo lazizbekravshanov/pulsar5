@@ -146,13 +146,14 @@ class Analyst(Agent):
             "disaster_declarations": self._load_declarations,
         }[query.name]
 
-        provenance_for = lambda as_of: Provenance(  # noqa: E731 - small local helper
-            source_table=query.table,
-            query=query.sql,
-            as_of=as_of,
-            retrieved_at=utc_now_iso(),
-            data_source=result.source,
-        )
+        def provenance_for(as_of: str) -> Provenance:
+            return Provenance(
+                source_table=query.table,
+                query=query.sql,
+                as_of=as_of,
+                retrieved_at=utc_now_iso(),
+                data_source=result.source,
+            )
         fact_ids = loader(result.rows, provenance_for, replay_hour)
         self.log(
             "load_facts",

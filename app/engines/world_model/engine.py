@@ -21,8 +21,9 @@ of it are invalidated.
 from __future__ import annotations
 
 import threading
+from collections.abc import Iterable
 from dataclasses import dataclass, field, replace
-from typing import Any, Iterable
+from typing import Any
 
 from app.schemas import utc_now_iso
 

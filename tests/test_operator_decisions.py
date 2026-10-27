@@ -48,7 +48,7 @@ def _plan(client, run_id="op-test"):
 
 
 def test_approving_a_held_action_records_it_and_shrinks_the_queue(client):
-    body, held, _ = _plan(client)
+    _body, held, _ = _plan(client)
 
     res = client.post("/runs/op-test/decisions", json={"action_id": held[0], "decision": "approve"})
 
@@ -74,7 +74,7 @@ def test_approval_marks_the_world_model_decision_committed(client):
 
 
 def test_declining_writes_a_trace_line_and_a_memory_episode(client):
-    body, held, _ = _plan(client)
+    _body, held, _ = _plan(client)
     note = "Shelter staff cannot reach it before the bridge closes"
 
     res = client.post("/runs/op-test/decisions",
@@ -82,8 +82,8 @@ def test_declining_writes_a_trace_line_and_a_memory_episode(client):
     assert res.status_code == 200, res.text
 
     trace = client.get("/runs/op-test/trace").text
-    lines = [json.loads(l) for l in trace.splitlines() if l.strip()]
-    mine = [l for l in lines if l["agent_name"] == "Operator" and l["action"] == "decline_action"]
+    lines = [json.loads(line) for line in trace.splitlines() if line.strip()]
+    mine = [line for line in lines if line["agent_name"] == "Operator" and line["action"] == "decline_action"]
     assert len(mine) == 1
     assert held[1] in mine[0]["output_summary"]
     assert note in mine[0]["input_summary"]

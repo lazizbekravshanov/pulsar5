@@ -18,8 +18,9 @@ inherit it through the carryover, never by re-injection.
 from __future__ import annotations
 
 import json
+from collections.abc import Callable
 from dataclasses import dataclass, field
-from typing import Any, Callable
+from typing import Any
 
 ENGINE_NAME = "markovian"
 
@@ -53,7 +54,9 @@ def compress(carryover: dict[str, Any]) -> dict[str, Any]:
         droppable = [k for k in out if k not in priority[:3]]
         if not droppable:
             break
-        out.pop(sorted(droppable, key=lambda k: priority.index(k) if k in priority else 99)[-1])
+        # sorted()[-1], not max(): on a tie the last key in insertion order goes, and
+        # the conformance test pins which field is dropped first.
+        out.pop(sorted(droppable, key=lambda k: priority.index(k) if k in priority else 99)[-1])  # noqa: FURB192
     return out
 
 

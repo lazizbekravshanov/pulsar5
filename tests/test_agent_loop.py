@@ -1,6 +1,5 @@
 """The reasoning loop: critique, revision, bounded iteration, escalation."""
 
-import json
 from pathlib import Path
 
 import pytest
@@ -17,7 +16,7 @@ from app.config import load_settings
 from app.engines.hmem.engine import HMem
 from app.engines.world_model.engine import WorldModel
 from app.orchestrator import Orchestrator
-from app.schemas import Critique, RunRequest
+from app.schemas import Critique
 from app.tracing import Tracer
 
 REPO = Path(__file__).resolve().parent.parent
@@ -103,7 +102,7 @@ def test_loop_stops_at_max_iterations_and_escalates(loaded):
     orchestrator = Orchestrator(loaded.settings)
     planner, simulator, critic = Planner(loaded), Simulator(loaded), Critic(loaded)
 
-    plan, simulation, critique, iterations = orchestrator._refine(
+    plan, _simulation, critique, iterations = orchestrator._refine(
         planner.propose(replay_hour="2022-09-26T12:00Z", constraints=constraints),
         planner=planner, simulator=simulator, critic=critic,
         replay_hour="2022-09-26T12:00Z", constraints=constraints, lessons=[], max_iterations=1,

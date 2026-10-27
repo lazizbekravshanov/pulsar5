@@ -18,7 +18,7 @@ from __future__ import annotations
 
 import time
 from dataclasses import dataclass, field
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 from typing import Any
 
 from app.adapters.nightshift import NightshiftClient
@@ -285,7 +285,7 @@ class Orchestrator:
                         region=state.region, replay_hour=new_hour, goal=state.goal or "Replan after advisory update"
                     )
 
-            revised, simulation, critique, iterations = self._refine(
+            revised, _simulation, critique, iterations = self._refine(
                 planner.propose(
                     replay_hour=state.replay_hour,
                     constraints=state.constraints,
@@ -463,11 +463,11 @@ class Orchestrator:
         if steps == 1:
             return [request.input.replay_hour]
         try:
-            start = datetime.fromisoformat(request.input.replay_hour.replace("Z", "+00:00"))
+            start = datetime.fromisoformat(request.input.replay_hour)
         except ValueError:
             return [request.input.replay_hour]
         return [
-            (start + timedelta(hours=i)).astimezone(timezone.utc).isoformat(timespec="minutes").replace("+00:00", "Z")
+            (start + timedelta(hours=i)).astimezone(UTC).isoformat(timespec="minutes").replace("+00:00", "Z")
             for i in range(steps)
         ]
 

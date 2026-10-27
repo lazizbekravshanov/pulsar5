@@ -50,8 +50,16 @@
     margin:0;font-size:17px;font-weight:700;letter-spacing:-.015em;white-space:nowrap;
   }
   header .what{color:var(--quiet);font-size:13.5px}
+  /* Who is deciding. Not authentication, attribution: the name goes on
+     every decision in the trace and in memory. */
+  .who{margin-left:auto;display:flex;align-items:baseline;gap:7px;font-size:12px;color:var(--quiet)}
+  .who input{
+    width:132px;padding:3px 4px;font:500 12.5px/1.3 var(--mono);color:var(--ink);
+    background:transparent;border:0;border-bottom:1px solid var(--rule);border-radius:0;
+  }
+  .who input:focus-visible{outline:0;border-bottom-color:var(--survey)}
   .badge{
-    margin-left:auto;font:500 12px/1 var(--mono);color:var(--quiet);
+    margin-left:18px;font:500 12px/1 var(--mono);color:var(--quiet);
     display:flex;align-items:center;gap:8px;
   }
   .badge .dot{width:7px;height:7px;border-radius:50%;background:var(--faint)}
@@ -71,6 +79,7 @@
 
   /* ---------------------------------------------------------- controls */
   label{display:block;font-size:12.5px;color:var(--quiet);margin:11px 0 4px}
+  .hint{margin:5px 0 0;font-size:12px;color:var(--faint);min-height:1.4em}
   input,select{
     width:100%;background:var(--ground);color:var(--ink);
     border:1px solid var(--rule);border-radius:3px;
@@ -144,7 +153,14 @@
   .act.held{border-left-color:var(--hold)}
   .act.gone{border-left-color:var(--alarm);opacity:.55}
   .act .top{display:flex;align-items:baseline;gap:9px;margin-bottom:2px}
-  .act .tgt{font:600 13px/1.2 var(--mono);letter-spacing:-.02em}
+  /* The target id is the row's "go there" control, so it is a real button:
+     keyboard users reach it with Tab and press Enter to locate it. */
+  .act .tgt{
+    width:auto;margin:0;padding:0;background:none;border:0;color:var(--ink);
+    font:600 13px/1.2 var(--mono);letter-spacing:-.02em;cursor:pointer;
+    text-decoration:underline dotted var(--faint);text-underline-offset:3px;
+  }
+  .act .tgt:hover{background:none;text-decoration-color:var(--ink)}
   .act .kind{font-size:12.5px;color:var(--quiet)}
   .act .state{
     margin-left:auto;font-size:12px;font-weight:600;color:var(--commit);
@@ -233,6 +249,7 @@
   .trace .rej{color:var(--alarm)}
   .trace .acc{color:var(--commit)}
   .trace .eng{color:var(--cite)}
+  .trace .op,.trace .op .ag{color:var(--hold)}
 
   /* The legend sits on the map it explains, drawn with the marker shapes. */
   .legend-box{
@@ -285,6 +302,8 @@
     header{padding:11px 16px}
     .badge{font-size:11px;white-space:nowrap}
     header .what{flex-basis:100%;order:3;font-size:12.5px}
+    .who{margin-left:0}
+    .badge{margin-left:auto}
     .col{padding:16px 16px 32px}
   }
 </style>
@@ -294,6 +313,7 @@
 <header>
   <h1>Pulsar 5</h1>
   <span class="what">County emergency operations &mdash; Hurricane Ian replay</span>
+  <label class="who"><span>Deciding as</span><input id="who" type="text" maxlength="40" placeholder="your name" autocomplete="off"></label>
   <span class="badge" id="badge"><span class="dot"></span>checking</span>
 </header>
 
@@ -305,12 +325,13 @@
       <label for="hour">Advisory time (UTC)</label>
       <select id="hour">
         <option value="2022-09-26T06:00Z">26 Sep 06:00, advisory 14</option>
-        <option value="2022-09-26T12:00Z" selected>26 Sep 12:00, advisory 15, aimed at Tampa</option>
+        <option value="2022-09-26T12:00Z" selected data-hint="Forecast aimed at Tampa; Lee sits outside the cone">26 Sep 12:00, advisory 15</option>
         <option value="2022-09-26T21:00Z">26 Sep 21:00, advisory 17</option>
         <option value="2022-09-27T09:00Z">27 Sep 09:00, advisory 19</option>
-        <option value="2022-09-27T16:00Z">27 Sep 16:00, advisory 21, track moves south</option>
-        <option value="2022-09-28T10:00Z">28 Sep 10:00, advisory 25, aimed at Lee</option>
+        <option value="2022-09-27T16:00Z" data-hint="The track starts moving south">27 Sep 16:00, advisory 21</option>
+        <option value="2022-09-28T10:00Z" data-hint="Forecast aimed at Lee">28 Sep 10:00, advisory 25</option>
       </select>
+      <p class="hint" id="hour-hint"></p>
       <label id="region-label">Counties in scope</label>
       <div class="chips" id="region" role="group" aria-labelledby="region-label">
         <button type="button" class="chip" data-v="Lee" aria-pressed="true">Lee</button>
@@ -340,6 +361,7 @@
 
   <!-- ------------------------------------------------ plan -->
   <div class="col">
+    <div id="notices"></div>
     <section id="out">
       <h2>No plan yet</h2>
       <p class="note">Pick an hour and press Plan. Every action cites the facts it rests on, a simulator checks it, and a critic can send it back before anything commits.</p>
@@ -378,6 +400,31 @@ legend.onAdd = () => {
 legend.addTo(map);
 
 let runId = null, world = null, sampleMode = false;
+
+/* The advisory picker's one-line context, and who is at the console. The
+   name is attribution, kept in this browser only. */
+const hourHint = () => { $('#hour-hint').textContent = $('#hour').selectedOptions[0]?.dataset.hint || ''; };
+$('#hour').addEventListener('change', hourHint); hourHint();
+const whoami = () => ($('#who').value.trim() || 'operator');
+try{ $('#who').value = localStorage.getItem('pulsar5.operator') || ''; }catch{}
+$('#who').addEventListener('change', () => { try{ localStorage.setItem('pulsar5.operator', $('#who').value.trim()); }catch{} });
+
+/* The hosted demo runs on serverless functions: a run lives in one
+   instance's memory and a later request can land on another. When the
+   server no longer knows the run, rebuild it from the same request, say
+   so, and retry once. */
+async function withRun(send){
+  let res = await send();
+  if(res.status !== 404 || !planRequest) return res;
+  const again = await fetch('/run', {method:'POST', headers:{'Content-Type':'application/json'},
+    body: JSON.stringify(planRequest)});
+  if(!again.ok) return res;
+  replayed.clear(); decisions = {};
+  document.querySelectorAll('[data-ev].applied').forEach(x=>x.classList.remove('applied'));
+  /* Outside #out, which the render that follows will replace. */
+  $('#notices').innerHTML = '<p class="note warn">The server had lost this run (the hosted demo keeps runs in memory), so it was rebuilt from the same request before continuing. Decisions and events made on it before are gone.</p>';
+  return send();
+}
 /* The plan on screen, by action id, and what the operator has said about the
    held ones. Both are rebuilt on every plan and every revision. */
 let actionsById = {}, escalatedIds = new Set(), decisions = {};
@@ -416,7 +463,7 @@ $('#go').onclick = async () => {
     goal:'Plan shelter openings, supply staging and evacuation priority for the next 24 hours.',
     constraints:{supply_trucks:+$('#trucks').value, staging_sites_max:+$('#staging').value}},
     options:{max_iterations:3, replay_steps:+$('#steps').value}};
-  replayed.clear(); decisions = {};
+  replayed.clear(); decisions = {}; $('#notices').innerHTML = '';
   try{
     const res = await fetch('/run', {method:'POST', headers:{'Content-Type':'application/json'},
       body: JSON.stringify(planRequest)});
@@ -465,8 +512,8 @@ document.querySelectorAll('[data-ev]').forEach(b => b.onclick = async () => {
       document.querySelectorAll('[data-ev].applied').forEach(x=>x.classList.remove('applied'));
     }
     b.innerHTML = '<span class="spin"></span>Revising';
-    const res = await fetch('/events', {method:'POST', headers:{'Content-Type':'application/json'},
-      body: JSON.stringify({run_id: runId, event: EVENTS[key]})});
+    const res = await withRun(() => fetch('/events', {method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({run_id: runId, event: EVENTS[key]})}));
     if(!res.ok){ return; }
     const data = await res.json();
     replayed.add(key);
@@ -514,7 +561,7 @@ function actionRow(a, escalated){
   return `<div class="act ${held?'held':''} ${d?'decided '+d.decision:''}" data-target="${esc(a.target)}" data-action="${esc(a.action_id)}">
     <div class="top">
       <span class="kind">${esc(verb)}</span>
-      <span class="tgt">${esc(a.target)}</span>
+      <button type="button" class="tgt" title="Show on the map">${esc(a.target)}</button>
       <span class="state">${state}</span>
     </div>
     <p class="detail">${esc(a.detail)}</p>
@@ -542,8 +589,8 @@ async function decide(strip, choice){
   buttons.forEach(x => x.disabled = true);
   strip.querySelector('.err')?.remove();
   try{
-    const res = await fetch(`/runs/${runId}/decisions`, {method:'POST', headers:{'Content-Type':'application/json'},
-      body: JSON.stringify({action_id: id, decision: choice, note})});
+    const res = await withRun(() => fetch(`/runs/${runId}/decisions`, {method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({action_id: id, decision: choice, note, operator: whoami()})}));
     const data = await res.json();
     if(!res.ok){
       strip.insertAdjacentHTML('beforeend', `<span class="err">${esc(data.detail || res.statusText)}</span>`);
@@ -751,7 +798,7 @@ async function loadTrace(){
   const text = await (await fetch(`/runs/${runId}/trace`)).text();
   el.innerHTML = text.trim().split('\n').map(line => {
     let r; try{ r = JSON.parse(line); }catch{ return ''; }
-    const cls = r.action==='reject_plan' ? 'rej' : r.action==='accept_plan' ? 'acc' : r.engine ? 'eng' : '';
+    const cls = r.agent_name==='Operator' ? 'op' : r.action==='reject_plan' ? 'rej' : r.action==='accept_plan' ? 'acc' : r.engine ? 'eng' : '';
     const bits = [r.model && `model=${r.model}`, r.engine && `engine=${r.engine}`,
       r.row_count!=null && `rows=${r.row_count}`, r.confidence!=null && `conf=${r.confidence}`]
       .filter(Boolean).join(' ');

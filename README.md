@@ -219,7 +219,7 @@ Full report: [`output_examples/eval_report.json`](output_examples/eval_report.js
 | `GET /runs/{id}/trace` | The JSONL trace |
 | `GET /runs/{id}/world` | Full World Model snapshot: beliefs with provenance, decision graph, conflicts |
 | `GET /health` | Zetaris and Nightshift reachability, pinned lane models |
-| `GET /` | Operator UI |
+| `GET /` | Operator console: plan, map, change-of-mind diff, approve or decline held actions |
 
 Failures return a structured error with `type`, `message` and `recoverable` — never a stack trace, never a hang.
 
@@ -256,6 +256,7 @@ Engine conformance (concurrent writes, stale-write protection, cross-session rec
 Stated plainly, because an emergency manager deserves to know what this is not.
 
 - **Not an official decision tool.** A research prototype built in a hackathon. Do not use it to make real evacuation decisions.
+- **Runs live in process memory.** `RUNS` in `app/orchestrator.py` is a dict, so a run, its events and its operator decisions last as long as the process does. On the hosted demo that is one serverless instance; a later request can land on another one and get a 404 for the run. The console handles that by rebuilding the run from the same request and retrying once, and says so. A durable run store is the fix, not done here.
 - **Scoped to five Florida counties and one storm.** The planner, simulator and belief reviser never mention a place, and `region` is a request parameter (`WHERE county IN (...)` in `app/queries.py`). But every Zetaris table only holds the Ian replay: Lee, Charlotte, Sarasota, Pinellas and Hillsborough. Ask for another county and you get zero rows and an abstention. The live registrations carry a Florida filter in their endpoint URLs too (`scripts/zetaris/05_disaster_declarations.sql`, `07_storm_warnings_archive.sql`). Going to a second state needs one real change before any new data: the app keys on county *name*, and there are about a dozen Lee Counties in the US, so every table and query would switch to state plus county FIPS.
 - **The replay uses archived data.** Advisory positions are rounded and cones simplified. Real NHC products are more precise.
 - **Shelter occupancy during Ian is simulated.** `data/replay/facilities.json` is synthetic, generated to FEMA- and ACS-shaped distributions. No real shelter occupancy or patient data appears anywhere in this repository.

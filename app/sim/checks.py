@@ -12,9 +12,9 @@ from __future__ import annotations
 from typing import Any
 
 from app.engines.world_model.engine import WorldModel
-from app.sim.capacity import usable_headroom
 from app.schemas import Plan, SimulationResult, Violation
-from app.sim.geo import distance_to_nearest, haversine_miles, point_in_polygon
+from app.sim.capacity import usable_headroom
+from app.sim.geo import distance_to_nearest, point_in_polygon
 
 # An evacuation order for a zone sends this share of its population to shelters.
 # Conservative public-planning rule of thumb, stated in the README limitations.

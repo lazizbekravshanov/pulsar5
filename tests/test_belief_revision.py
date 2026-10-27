@@ -1,6 +1,5 @@
 """Change of mind: only decisions that depended on changed facts may fall."""
 
-from pathlib import Path
 
 import pytest
 
