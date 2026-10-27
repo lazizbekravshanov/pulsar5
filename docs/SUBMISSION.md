@@ -60,7 +60,7 @@ Reached only through Nightshift, never called directly. The NVIDIA API key lives
 
 ## 2. Demo video
 
-**Rendered: `~/pet/videos/pulsar5-demo/renders/pulsar5-demo.mp4`, 1920x1080, 3:24, narrated.** Inside the 1:00 to 4:00 window.
+**Rendered: `~/pet/videos/pulsar5-demo/renders/pulsar5-demo.mp4`, 1920x1080, 3:47, narrated.** Inside the 1:00 to 4:00 window.
 
 Published as a release asset so the form can take a link: https://github.com/lazizbekravshanov/pulsar5/releases/download/v0.1-demo/pulsar5-demo.mp4 (release page: https://github.com/lazizbekravshanov/pulsar5/releases/tag/v0.1-demo).
 
@@ -71,7 +71,7 @@ What a judge should know about how it was made, so nothing on screen overclaims:
 - **The console frames are real.** Captured at 1920x1080 from the public deployment, pulsar5-nine.vercel.app, by driving the actual page. That deployment runs SAMPLE_MODE, so its header reads "Zetaris from cache / Nightshift recorded" and the plan panel says "Models that answered: none, fell back". The narration does not claim Nemotron over those frames.
 - **The Zetaris and Nightshift trace lines are from a real live run**, `logs/trace-ui-2022-09-26T12_00Z-5c-1793069641774.jsonl`: seven queries with `data_source=zetaris`, and the three lanes served by `nvidia/nemotron-3.5-lightning-30b-a3b`, `nvidia/nemotron-3-ultra-550b-a55b` and `nvidia/nemotron-3.5-bolt-e4b` with `status=success` and no fallback.
 - **The loop numbers** (14,184 vs 5,441, Critic 0.56 then 0.78, 11 of 29 held) are from run `ian-landfall-minus-48h`, the same run the deck's loop slide cites.
-- **The narration is a synthesized voice** (macOS, Samantha). No teammate's voice was recorded.
+- **The narration is a synthesized voice**, the Microsoft neural voice en-US-AndrewMultilingualNeural through edge-tts. No teammate's voice was recorded.
 - Every impact figure is sourced in [IMPACT-DATA.md](IMPACT-DATA.md).
 
 Regenerate after any change with `cd ~/pet/videos/pulsar5-demo && python3 narrate.py && python3 build.py && npm run check && npx hyperframes render . -o renders/pulsar5-demo.mp4`.
@@ -92,7 +92,7 @@ Regenerate after any change with `cd ~/pet/videos/pulsar5-demo && python3 narrat
 - [x] Live demo judges can open: https://pulsar5-nine.vercel.app
 - [x] Sponsor technology explanation (section 1 above)
 - [x] Slide deck as PDF: `docs/pulsar5-deck.pdf` in the repo (the artifact link is private and 403s for anyone else)
-- [x] Demo video, 3:24: https://github.com/lazizbekravshanov/pulsar5/releases/download/v0.1-demo/pulsar5-demo.mp4 (local file at `~/pet/videos/pulsar5-demo/renders/pulsar5-demo.mp4` if the form wants an upload)
+- [x] Demo video, 3:47: https://github.com/lazizbekravshanov/pulsar5/releases/download/v0.1-demo/pulsar5-demo.mp4 (local file at `~/pet/videos/pulsar5-demo/renders/pulsar5-demo.mp4` if the form wants an upload)
 - [x] Zetaris running locally, eight views registered, `verify.sh` 9/9
 - [x] Nightshift NVIDIA key working, three lanes pinned and serving
 - [ ] Submitted well before 23:45 UTC
