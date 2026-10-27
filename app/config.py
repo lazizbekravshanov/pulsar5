@@ -7,6 +7,7 @@ allowed to turn a secret-bearing string into something printable.
 from __future__ import annotations
 
 import os
+import tempfile
 from dataclasses import dataclass, field
 from pathlib import Path
 
@@ -19,10 +20,34 @@ except ImportError:  # pragma: no cover
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
 DATA_DIR = REPO_ROOT / "data"
-LOGS_DIR = REPO_ROOT / "logs"
 SAMPLE_CACHE_DIR = DATA_DIR / "sample_cache"
 REPLAY_DIR = DATA_DIR / "replay"
-HMEM_DIR = DATA_DIR / "hmem"
+
+
+def _writable_dir(env_var: str, preferred: Path, fallback_name: str) -> Path:
+    """A directory we can actually write to at runtime.
+
+    Serverless hosts mount the deployment read-only and give you /tmp. Writing a
+    trace or an H-MEM store under the repo works locally and 500s there, so the
+    path is settable by env and falls back to /tmp when the preferred one cannot
+    be created or written. Read-only paths (the sample cache, the replay data)
+    stay in the repo, because they ship with it.
+    """
+    override = os.getenv(env_var)
+    if override:
+        return Path(override)
+    try:
+        preferred.mkdir(parents=True, exist_ok=True)
+        probe = preferred / ".write-probe"
+        probe.touch()
+        probe.unlink()
+        return preferred
+    except OSError:
+        return Path(tempfile.gettempdir()) / fallback_name
+
+
+LOGS_DIR = _writable_dir("PULSAR5_LOGS_DIR", REPO_ROOT / "logs", "pulsar5-logs")
+HMEM_DIR = _writable_dir("PULSAR5_HMEM_DIR", DATA_DIR / "hmem", "pulsar5-hmem")
 
 
 def _bool(name: str, default: bool) -> bool:
