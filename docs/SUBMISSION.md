@@ -62,6 +62,8 @@ Reached only through Nightshift, never called directly. The NVIDIA API key lives
 
 **Rendered: `~/pet/videos/pulsar5-demo/renders/pulsar5-demo.mp4`, 1920x1080, 3:24, narrated.** Inside the 1:00 to 4:00 window.
 
+Published as a release asset so the form can take a link: https://github.com/lazizbekravshanov/pulsar5/releases/download/v0.1-demo/pulsar5-demo.mp4 (release page: https://github.com/lazizbekravshanov/pulsar5/releases/tag/v0.1-demo).
+
 It is an animated walkthrough built with HyperFrames from the approved script in [VIDEO-SCRIPT.md](VIDEO-SCRIPT.md), not a screen recording. Nine scenes: the problem with the NHC figures, the curl call, the plan on the real console, the Planner/Simulator/Critic loop, Zetaris, Nightshift, the change of mind on the real console, the three engines plus the scoreboard, and the Lee County close. The three short inserts (title card, architecture, stat reveal) are cut in.
 
 What a judge should know about how it was made, so nothing on screen overclaims:
@@ -90,7 +92,7 @@ Regenerate after any change with `cd ~/pet/videos/pulsar5-demo && python3 narrat
 - [x] Live demo judges can open: https://pulsar5-nine.vercel.app
 - [x] Sponsor technology explanation (section 1 above)
 - [x] Slide deck as PDF: `docs/pulsar5-deck.pdf` in the repo (the artifact link is private and 403s for anyone else)
-- [x] Demo video, 3:24, at `~/pet/videos/pulsar5-demo/renders/pulsar5-demo.mp4` (attach the file, or publish it as a GitHub release asset for a link)
+- [x] Demo video, 3:24: https://github.com/lazizbekravshanov/pulsar5/releases/download/v0.1-demo/pulsar5-demo.mp4 (local file at `~/pet/videos/pulsar5-demo/renders/pulsar5-demo.mp4` if the form wants an upload)
 - [x] Zetaris running locally, eight views registered, `verify.sh` 9/9
 - [x] Nightshift NVIDIA key working, three lanes pinned and serving
 - [ ] Submitted well before 23:45 UTC
