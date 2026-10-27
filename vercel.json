@@ -3,13 +3,9 @@
   "functions": {
     "api/index.py": {
       "includeFiles": "{app/**,data/**,ui/**,input_examples/**}",
-      "maxDuration": 30,
-      "memory": 1024
+      "maxDuration": 30
     }
   },
-  "rewrites": [
-    { "source": "/(.*)", "destination": "/api/index" }
-  ],
   "env": {
     "SAMPLE_MODE": "true",
     "PULSAR5_LOGS_DIR": "/tmp/pulsar5-logs",

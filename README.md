@@ -31,6 +31,14 @@ And at advisory 15, hours before any forecast pointed there, Pulsar 5 had alread
 
 ---
 
+## Try it without installing anything
+
+**https://pulsar5-nine.vercel.app**
+
+Pick an hour, press Plan, then press *Advisory 23 moves the track south* and watch it change its mind.
+
+The hosted demo runs in `SAMPLE_MODE`, because Zetaris and Nightshift are local services with no cloud instance to reach. That is not a shortcut: SAMPLE_MODE executes the whole agent loop against recorded Zetaris results, so the plan, the Critic's rejection, the escalations and the change-of-mind diff are all computed per request. The trace says plainly which model calls fell back. For the sponsor integrations running live against a real Zetaris instance and real Nemotron routes, see [`logs/trace-sample.jsonl`](logs/trace-sample.jsonl), captured from a local run.
+
 ## Run it in 60 seconds
 
 No Zetaris, no Nightshift, no credentials, no network:

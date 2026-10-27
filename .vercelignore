@@ -1,3 +1,12 @@
+# Secrets must never enter the function bundle. Vercel uploads from the working
+# directory, not from git, so .gitignore does not protect this on its own.
+.env
+.env.*
+!.env.example
+*.key
+*.pem
+
+# Not needed at runtime
 .venv
 venv
 tests
@@ -11,3 +20,4 @@ __pycache__
 .git
 Dockerfile
 .dockerignore
+ui/index.html.bak
