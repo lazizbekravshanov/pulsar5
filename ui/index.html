@@ -5,116 +5,225 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Pulsar 5</title>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Public+Sans:ital,wght@0,300..800;1,400&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
 <style>
+  /* Pulsar 5 operator console.
+     Public Sans is the US Web Design System face, so a county emergency tool
+     wearing it is domain-correct rather than decorative. Amber carries exactly
+     one meaning throughout: a person has to decide this. Nothing else is amber,
+     which is what lets an officer read 29 rows at a glance. */
   :root{
-    --bg:#0d1117; --panel:#151b23; --panel-2:#1b2230; --line:#283040;
-    --ink:#e6edf3; --muted:#8b98a8; --dim:#5f6b7c;
-    --accent:#4da3ff; --warn:#f0a93b; --bad:#f06a5d; --good:#56cc8e; --violet:#a07cf0;
-    --mono:ui-monospace,SFMono-Regular,"SF Mono",Menlo,monospace;
+    --ground:#0a0f14;
+    --board:#111a22;
+    --raised:#16212b;
+    --rule:#1e2b37;
+    --rule-soft:#17222c;
+    --ink:#e7edf1;
+    --quiet:#8595a3;
+    --faint:#5d6c7a;
+
+    --hold:#e8913a;      /* a person must decide */
+    --commit:#4fb286;    /* auto-committed, reversible */
+    --alarm:#d9544d;     /* irreversible, or stood down */
+    --cite:#8c7bd0;      /* evidence and beliefs */
+    --survey:#5aa7e8;    /* data lineage */
+
+    --sans:"Public Sans",-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+    --mono:"JetBrains Mono",ui-monospace,SFMono-Regular,monospace;
+    color-scheme:dark;
   }
   *{box-sizing:border-box}
-  body{margin:0;background:var(--bg);color:var(--ink);
-    font:14px/1.5 -apple-system,BlinkMacSystemFont,"Segoe UI",Inter,sans-serif}
-  header{display:flex;align-items:baseline;gap:14px;padding:14px 18px;
-    border-bottom:1px solid var(--line);background:var(--panel)}
-  header h1{margin:0;font-size:17px;letter-spacing:-.01em}
-  header .sub{color:var(--muted);font-size:12.5px}
-  header .badge{margin-left:auto;font:11px var(--mono);color:var(--muted);
-    border:1px solid var(--line);border-radius:999px;padding:3px 10px}
-  main{display:grid;grid-template-columns:320px 1fr 390px;height:calc(100vh - 53px)}
-  .col{overflow-y:auto;padding:14px}
-  .col+.col{border-left:1px solid var(--line)}
-  #map{height:100%;background:#0a0e14}
-  h2{font-size:11px;text-transform:uppercase;letter-spacing:.09em;color:var(--dim);
-    margin:0 0 9px;font-weight:600}
-  h2+h2,section+section{margin-top:18px}
-  label{display:block;font-size:11.5px;color:var(--muted);margin:9px 0 3px}
-  input,select,textarea{width:100%;background:var(--panel-2);color:var(--ink);
-    border:1px solid var(--line);border-radius:6px;padding:7px 9px;font-size:13px;font-family:inherit}
+  body{
+    margin:0;background:var(--ground);color:var(--ink);
+    font-family:var(--sans);font-size:15px;line-height:1.55;
+    -webkit-font-smoothing:antialiased;
+  }
+
+  /* ---------------------------------------------------------- masthead */
+  header{
+    display:flex;align-items:baseline;gap:16px;
+    padding:13px 20px;border-bottom:1px solid var(--rule);background:var(--board);
+  }
+  header h1{
+    margin:0;font-size:17px;font-weight:700;letter-spacing:-.015em;
+  }
+  header .what{color:var(--quiet);font-size:13.5px}
+  .badge{
+    margin-left:auto;font:500 12px/1 var(--mono);color:var(--quiet);
+    display:flex;align-items:center;gap:8px;
+  }
+  .badge .dot{width:7px;height:7px;border-radius:50%;background:var(--faint)}
+  .badge.live .dot{background:var(--commit)}
+
+  main{display:grid;grid-template-columns:286px 1fr 408px;height:calc(100vh - 51px)}
+  .col{overflow-y:auto;padding:18px 18px 40px}
+  .col+.col{border-left:1px solid var(--rule)}
+  #map{height:100%;background:#070c11}
+
+  /* ---------------------------------------------------------- section heads */
+  h2{
+    font-size:13px;font-weight:700;color:var(--ink);margin:0 0 12px;
+    padding-bottom:7px;border-bottom:1px solid var(--rule);letter-spacing:-.005em;
+  }
+  section+section{margin-top:26px}
+
+  /* ---------------------------------------------------------- controls */
+  label{display:block;font-size:12.5px;color:var(--quiet);margin:11px 0 4px}
+  input,select{
+    width:100%;background:var(--ground);color:var(--ink);
+    border:1px solid var(--rule);border-radius:3px;
+    padding:7px 9px;font-size:14px;font-family:inherit;
+  }
+  input:focus-visible,select:focus-visible,button:focus-visible{
+    outline:2px solid var(--survey);outline-offset:1px;
+  }
   select{color-scheme:dark}
-  select[multiple]{padding:4px}
-  select option{background:var(--panel-2);color:var(--ink);padding:3px 5px}
-  select option:checked{background:var(--accent);color:#06121f;font-weight:600}
-  button{background:var(--accent);color:#06121f;border:0;border-radius:6px;
-    padding:9px 13px;font-weight:650;font-size:13px;cursor:pointer;width:100%;margin-top:12px}
-  button:hover{filter:brightness(1.08)}
-  button:disabled{opacity:.5;cursor:not-allowed}
-  button.ghost{background:transparent;color:var(--ink);border:1px solid var(--line);font-weight:500;margin-top:7px}
-  button.ghost:hover{background:var(--panel-2);filter:none}
-  .stat{display:flex;justify-content:space-between;gap:10px;padding:5px 0;
-    border-bottom:1px solid var(--line);font-size:12.5px}
+  select[multiple]{padding:3px}
+  select option{background:var(--ground);color:var(--ink);padding:3px 5px}
+  select option:checked{background:var(--survey);color:#05121d;font-weight:600}
+
+  button{
+    width:100%;margin-top:14px;padding:9px 13px;
+    background:var(--ink);color:var(--ground);
+    border:0;border-radius:3px;font-family:inherit;
+    font-size:14px;font-weight:650;cursor:pointer;
+  }
+  button:hover{background:#fff}
+  button:disabled{opacity:.45;cursor:not-allowed}
+  button.ghost{
+    background:transparent;color:var(--ink);
+    border:1px solid var(--rule);font-weight:500;
+    margin-top:7px;text-align:left;
+  }
+  button.ghost:hover{background:var(--raised);border-color:var(--faint)}
+
+  .note{
+    font-size:13px;color:var(--quiet);line-height:1.5;
+    border-left:2px solid var(--rule);padding:2px 0 2px 11px;margin-bottom:10px;
+  }
+  .note.warn{border-left-color:var(--hold);color:#e8cfa8}
+
+  /* ---------------------------------------------------------- outcome */
+  /* The one genuine card on the page: the thing an officer reads first. */
+  .outcome{
+    background:var(--board);border:1px solid var(--rule);border-radius:6px;
+    padding:4px 14px;margin-bottom:18px;
+  }
+  .stat{
+    display:flex;justify-content:space-between;gap:12px;align-items:baseline;
+    padding:7px 0;border-bottom:1px solid var(--rule-soft);font-size:13.5px;
+  }
   .stat:last-child{border-bottom:0}
-  .stat b{font-family:var(--mono);font-weight:600}
-  .act{border:1px solid var(--line);border-left-width:3px;border-radius:6px;
-    padding:9px 11px;margin-bottom:7px;background:var(--panel-2)}
-  .act.evacuate_zone{border-left-color:var(--bad)}
-  .act.open_shelter{border-left-color:var(--good)}
-  .act.stage_supplies{border-left-color:var(--accent)}
-  .act.hold{border-left-color:var(--dim)}
-  .act .top{display:flex;align-items:center;gap:7px;margin-bottom:3px}
-  .act .kind{font:10.5px var(--mono);text-transform:uppercase;letter-spacing:.05em;color:var(--muted)}
-  .act .tgt{font-family:var(--mono);font-size:12px;font-weight:650}
-  .act .detail{font-size:12.5px;color:#cbd5e1}
-  .act .meta{margin-top:5px;display:flex;flex-wrap:wrap;gap:5px}
-  .pill{font:10px var(--mono);padding:2px 7px;border-radius:999px;border:1px solid var(--line);color:var(--muted)}
-  .pill.esc{border-color:var(--warn);color:var(--warn)}
-  .pill.irr{border-color:var(--bad);color:var(--bad)}
-  .pill.ok{border-color:var(--good);color:var(--good)}
-  .pill.ev{border-color:var(--violet);color:var(--violet);cursor:help}
-  .note{font-size:12px;color:var(--muted);background:var(--panel-2);
-    border:1px solid var(--line);border-radius:6px;padding:9px 11px;margin-bottom:8px}
-  .note.warn{border-color:#5a4418;background:#241c0c;color:#f3cd8a}
-  .diff{display:grid;grid-template-columns:1fr 1fr;gap:9px}
-  .diff h3{font:10.5px var(--mono);text-transform:uppercase;color:var(--dim);margin:0 0 6px;letter-spacing:.06em}
-  .trace{font:11px var(--mono);max-height:300px;overflow-y:auto;
-    border:1px solid var(--line);border-radius:6px;background:#0a0e14}
-  .trace div{padding:4px 9px;border-bottom:1px solid #1a2030;white-space:pre-wrap;word-break:break-word}
+  .stat span{color:var(--quiet)}
+  .stat b{font:600 14px/1 var(--mono);font-variant-numeric:tabular-nums}
+  .stat b.good{color:var(--commit)}
+  .stat b.bad{color:var(--alarm)}
+
+  /* ---------------------------------------------------------- status board */
+  /* Ruled rows, not cards. The left stripe is the whole point: scanning a
+     column of 29 rows, amber is the only thing that needs you. */
+  .act{
+    border-left:3px solid var(--commit);
+    border-bottom:1px solid var(--rule-soft);
+    padding:11px 0 11px 13px;
+  }
+  .act.held{border-left-color:var(--hold)}
+  .act.gone{border-left-color:var(--alarm);opacity:.55}
+  .act .top{display:flex;align-items:baseline;gap:9px;margin-bottom:2px}
+  .act .tgt{font:600 13px/1.2 var(--mono);letter-spacing:-.02em}
+  .act .kind{font-size:12.5px;color:var(--quiet)}
+  .act .state{
+    margin-left:auto;font-size:12px;font-weight:600;color:var(--commit);
+    white-space:nowrap;
+  }
+  .act.held .state{color:var(--hold)}
+  .act .detail{font-size:13.5px;color:#c4d0da;margin:0;line-height:1.45}
+  .act .meta{margin-top:6px;display:flex;flex-wrap:wrap;gap:12px;align-items:baseline}
+  .act .m{font:400 12px/1 var(--mono);color:var(--faint)}
+  .act .m b{color:var(--quiet);font-weight:500}
+  .act .m.cite{color:var(--cite);cursor:help}
+
+  /* ---------------------------------------------------------- diff */
+  .diff{display:grid;grid-template-columns:1fr 1fr;gap:0;border:1px solid var(--rule);border-radius:6px;overflow:hidden;margin:12px 0 18px}
+  .diff div{padding:11px 13px}
+  .diff div+div{border-left:1px solid var(--rule)}
+  .diff h3{margin:0 0 4px;font-size:12px;font-weight:600;color:var(--faint)}
+  .diff p{margin:0;font-size:13.5px;line-height:1.45}
+  .diff .after{background:var(--board)}
+
+  /* ---------------------------------------------------------- trace */
+  .trace{
+    font:400 11.5px/1.5 var(--mono);max-height:280px;overflow-y:auto;
+    border:1px solid var(--rule);border-radius:4px;background:#070c11;
+  }
+  .trace div{padding:4px 10px;border-bottom:1px solid #101922;white-space:pre-wrap;word-break:break-word;color:var(--faint)}
   .trace div:last-child{border-bottom:0}
-  .trace .ag{color:var(--accent)}
-  .trace .rej{color:var(--bad)}
-  .trace .acc{color:var(--good)}
-  .trace .eng{color:var(--violet)}
-  .legend{font-size:11.5px;color:var(--muted)}
-  .legend i{display:inline-block;width:9px;height:9px;border-radius:2px;margin-right:6px}
-  .spin{display:inline-block;width:11px;height:11px;border:2px solid var(--line);
-    border-top-color:var(--accent);border-radius:50%;animation:s .7s linear infinite;vertical-align:-1px}
+  .trace .ag{color:var(--survey)}
+  .trace .rej{color:var(--alarm)}
+  .trace .acc{color:var(--commit)}
+  .trace .eng{color:var(--cite)}
+
+  .legend{font-size:12.5px;color:var(--quiet);display:flex;flex-direction:column;gap:5px}
+  .legend div{display:flex;align-items:center;gap:8px}
+  .legend i{width:9px;height:9px;border-radius:2px;flex:none}
+
+  .spin{
+    display:inline-block;width:11px;height:11px;border:2px solid rgba(10,15,20,.3);
+    border-top-color:var(--ground);border-radius:50%;animation:s .7s linear infinite;
+    vertical-align:-1px;margin-right:5px;
+  }
   @keyframes s{to{transform:rotate(360deg)}}
-  .leaflet-popup-content-wrapper,.leaflet-popup-tip{background:var(--panel);color:var(--ink);
-    border:1px solid var(--line)}
-  .leaflet-popup-content{font-size:12.5px;margin:10px 12px}
-  .leaflet-container{background:#0a0e14}
-  .basemap{filter:invert(1) hue-rotate(185deg) brightness(.72) contrast(.92) saturate(.5)}
-  .leaflet-control-attribution{background:rgba(13,17,23,.78)!important;color:var(--dim)!important;
-    font-size:10px!important;border:1px solid var(--line);border-right:0;border-bottom:0}
-  .leaflet-control-attribution a{color:var(--muted)!important}
-  .leaflet-control-zoom a{background:var(--panel)!important;color:var(--ink)!important;
-    border-color:var(--line)!important}
-  .leaflet-control-zoom a:hover{background:var(--panel-2)!important}
-  @media(max-width:1100px){main{grid-template-columns:1fr;height:auto}#map{height:420px}.col+.col{border-left:0;border-top:1px solid var(--line)}}
+  @media (prefers-reduced-motion:reduce){.spin{animation:none}}
+
+  /* ---------------------------------------------------------- leaflet */
+  .leaflet-container{background:#070c11;font-family:var(--sans)}
+  .basemap{filter:invert(1) hue-rotate(188deg) brightness(.68) contrast(.9) saturate(.42)}
+  .leaflet-popup-content-wrapper,.leaflet-popup-tip{
+    background:var(--board);color:var(--ink);border:1px solid var(--rule);border-radius:4px;
+  }
+  .leaflet-popup-content{font-size:13px;margin:10px 13px;line-height:1.5}
+  .leaflet-control-attribution{
+    background:rgba(10,15,20,.8)!important;color:var(--faint)!important;
+    font-size:10px!important;border:1px solid var(--rule);border-right:0;border-bottom:0;
+  }
+  .leaflet-control-attribution a{color:var(--quiet)!important}
+  .leaflet-control-zoom a{
+    background:var(--board)!important;color:var(--ink)!important;border-color:var(--rule)!important;
+  }
+  .leaflet-control-zoom a:hover{background:var(--raised)!important}
+
+  @media (max-width:1100px){
+    main{grid-template-columns:1fr;height:auto}
+    #map{height:420px}
+    .col+.col{border-left:0;border-top:1px solid var(--rule)}
+  }
 </style>
 </head>
 <body>
+
 <header>
   <h1>Pulsar 5</h1>
-  <span class="sub">Disaster response planning &middot; Hurricane Ian replay</span>
-  <span class="badge" id="badge">checking&hellip;</span>
+  <span class="what">County emergency operations &mdash; Hurricane Ian replay</span>
+  <span class="badge" id="badge"><span class="dot"></span>checking</span>
 </header>
 
 <main>
   <!-- ------------------------------------------------ controls -->
   <div class="col">
     <section>
-      <h2>Run</h2>
-      <label>Replay hour (UTC)</label>
+      <h2>Plan a replay hour</h2>
+      <label for="hour">Advisory time (UTC)</label>
       <select id="hour">
-        <option value="2022-09-26T06:00Z">26 Sep 06:00 &middot; advisory 14</option>
-        <option value="2022-09-26T12:00Z" selected>26 Sep 12:00 &middot; advisory 15 (Tampa)</option>
-        <option value="2022-09-26T21:00Z">26 Sep 21:00 &middot; advisory 17</option>
-        <option value="2022-09-27T09:00Z">27 Sep 09:00 &middot; advisory 19</option>
-        <option value="2022-09-27T16:00Z">27 Sep 16:00 &middot; advisory 21 (south)</option>
-        <option value="2022-09-28T10:00Z">28 Sep 10:00 &middot; advisory 25 (Lee)</option>
+        <option value="2022-09-26T06:00Z">26 Sep 06:00, advisory 14</option>
+        <option value="2022-09-26T12:00Z" selected>26 Sep 12:00, advisory 15, aimed at Tampa</option>
+        <option value="2022-09-26T21:00Z">26 Sep 21:00, advisory 17</option>
+        <option value="2022-09-27T09:00Z">27 Sep 09:00, advisory 19</option>
+        <option value="2022-09-27T16:00Z">27 Sep 16:00, advisory 21, track moves south</option>
+        <option value="2022-09-28T10:00Z">28 Sep 10:00, advisory 25, aimed at Lee</option>
       </select>
-      <label>Counties</label>
+      <label for="region">Counties in scope</label>
       <select id="region" multiple size="5">
         <option value="Lee" selected>Lee</option>
         <option value="Charlotte" selected>Charlotte</option>
@@ -122,28 +231,28 @@
         <option value="Pinellas" selected>Pinellas</option>
         <option value="Hillsborough" selected>Hillsborough</option>
       </select>
-      <label>Supply trucks</label><input id="trucks" type="number" value="12" min="1" max="200">
-      <label>Max staging sites</label><input id="staging" type="number" value="4" min="1" max="12">
-      <label>Replay steps (Markovian)</label><input id="steps" type="number" value="1" min="1" max="48">
+      <label for="trucks">Supply trucks available</label><input id="trucks" type="number" value="12" min="1" max="200">
+      <label for="staging">Staging sites allowed</label><input id="staging" type="number" value="4" min="1" max="12">
+      <label for="steps">Hours to replay</label><input id="steps" type="number" value="1" min="1" max="48">
       <button id="go">Plan</button>
     </section>
 
     <section>
-      <h2>Inject an event</h2>
-      <div class="note">The Belief Reviser diffs the world, invalidates only the decisions that cited a changed fact, and replans those.</div>
-      <button class="ghost" data-ev="track">Advisory 23 &mdash; track shifts south</button>
-      <button class="ghost" data-ev="shelter">Shelter S-071-2 at capacity</button>
-      <button class="ghost" data-ev="road">I-75 ramp closed</button>
+      <h2>Change the world mid-run</h2>
+      <p class="note">New information invalidates only the decisions that relied on it. Everything else stands.</p>
+      <button class="ghost" data-ev="track">Advisory 23 moves the track south</button>
+      <button class="ghost" data-ev="shelter">Shelter S-071-2 reaches capacity</button>
+      <button class="ghost" data-ev="road">I-75 ramp closes at Corkscrew</button>
     </section>
 
     <section>
-      <h2>Map key</h2>
+      <h2>Reading the map</h2>
       <div class="legend">
-        <div><i style="background:#f06a5d"></i>evacuating zone</div>
-        <div><i style="background:#8b98a8"></i>zone, no action</div>
-        <div><i style="background:#56cc8e"></i>shelter opened</div>
-        <div><i style="background:#4da3ff"></i>staging site</div>
-        <div><i style="background:rgba(240,169,59,.5)"></i>forecast cone</div>
+        <div><i style="background:#d9544d"></i>zone being evacuated</div>
+        <div><i style="background:#8595a3"></i>zone with no action</div>
+        <div><i style="background:#4fb286"></i>shelter opened</div>
+        <div><i style="background:#5aa7e8"></i>supply staging site</div>
+        <div><i style="background:rgba(232,145,58,.45)"></i>forecast cone</div>
       </div>
     </section>
   </div>
@@ -154,8 +263,8 @@
   <!-- ------------------------------------------------ plan -->
   <div class="col">
     <section id="out">
-      <h2>Plan</h2>
-      <div class="note">Choose an hour and press Plan. Every action cites World Model fact ids, is checked by the simulator, and is reviewed by the Critic before anything commits.</div>
+      <h2>No plan yet</h2>
+      <p class="note">Pick an hour and press Plan. Every action cites the facts it rests on, a simulator checks it, and a critic can send it back before anything commits.</p>
     </section>
   </div>
 </main>
@@ -164,31 +273,29 @@
 <script>
 const $ = s => document.querySelector(s);
 const esc = s => String(s ?? '').replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const n = x => (x ?? 0).toLocaleString();
 
 const map = L.map('map', {zoomControl:true, attributionControl:false}).setView([27.1,-82.2], 8);
-// OpenStreetMap standard tiles: free, no key, and darkened with a CSS filter
-// so the basemap recedes behind the data. A basemap that demands a key is a
-// liability in a live demo.
 L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
-  maxZoom: 19,
-  className: 'basemap',
-  attribution: '&copy; OpenStreetMap contributors'
+  maxZoom: 19, className: 'basemap', attribution: '&copy; OpenStreetMap contributors'
 }).addTo(map);
 L.control.attribution({prefix:false, position:'bottomright'}).addTo(map);
 let layer = L.layerGroup().addTo(map);
 
-let runId = null, world = null, lastPlan = null;
+let runId = null, world = null;
 
 /* ---------------------------------------------------------- health */
 fetch('/health').then(r=>r.json()).then(h=>{
-  const z = h.zetaris.reachable ? 'Zetaris live' : (h.sample_mode ? 'Zetaris cached' : 'Zetaris down');
-  const n = h.nightshift.reachable ? 'Nightshift live' : (h.sample_mode ? 'Nightshift recorded' : 'Nightshift down');
-  $('#badge').textContent = `${z} · ${n}${h.sample_mode ? ' · SAMPLE_MODE' : ''}`;
-}).catch(()=>{ $('#badge').textContent = 'api unreachable'; });
+  const live = h.zetaris.reachable && h.nightshift.reachable;
+  const z = h.zetaris.reachable ? 'Zetaris live' : (h.sample_mode ? 'Zetaris from cache' : 'Zetaris down');
+  const ns = h.nightshift.reachable ? 'Nightshift live' : (h.sample_mode ? 'Nightshift recorded' : 'Nightshift down');
+  $('#badge').innerHTML = `<span class="dot"></span>${esc(z)} &nbsp;/&nbsp; ${esc(ns)}`;
+  if (live) $('#badge').classList.add('live');
+}).catch(()=>{ $('#badge').innerHTML = '<span class="dot"></span>API unreachable'; });
 
 /* ---------------------------------------------------------- run */
 $('#go').onclick = async () => {
-  const btn = $('#go'); btn.disabled = true; btn.innerHTML = '<span class="spin"></span> planning';
+  const btn = $('#go'); btn.disabled = true; btn.innerHTML = '<span class="spin"></span>Planning';
   const region = [...$('#region').selectedOptions].map(o=>o.value);
   const hour = $('#hour').value;
   runId = `ui-${hour}-${region.length}c-${Date.now()}`;
@@ -198,18 +305,17 @@ $('#go').onclick = async () => {
         scenario:'ian_2022', region, replay_hour: hour,
         goal:'Plan shelter openings, supply staging and evacuation priority for the next 24 hours.',
         constraints:{supply_trucks:+$('#trucks').value, staging_sites_max:+$('#staging').value}},
-        options:{sample_mode:true, max_iterations:3, replay_steps:+$('#steps').value}})});
+        options:{max_iterations:3, replay_steps:+$('#steps').value}})});
     const data = await res.json();
     if(data.status === 'failed'){
-      $('#out').innerHTML = `<h2>Plan</h2><div class="note warn"><b>${esc(data.error?.type)}</b><br>${esc(data.error?.message)}</div>`;
+      $('#out').innerHTML = `<h2>The run stopped</h2><p class="note warn">${esc(data.error?.message)}</p>`;
       return;
     }
     world = await (await fetch(`/runs/${runId}/world`)).json();
-    lastPlan = data.output.plan;
     renderRun(data);
     draw(data.output.plan);
     loadTrace();
-  }catch(e){ $('#out').innerHTML = `<h2>Plan</h2><div class="note warn">${esc(e.message)}</div>`; }
+  }catch(e){ $('#out').innerHTML = `<h2>The run stopped</h2><p class="note warn">${esc(e.message)}</p>`; }
   finally{ btn.disabled = false; btn.textContent = 'Plan'; }
 };
 
@@ -226,33 +332,37 @@ const EVENTS = {
 };
 
 document.querySelectorAll('[data-ev]').forEach(b => b.onclick = async () => {
-  if(!runId){ alert('Run a plan first.'); return; }
-  b.disabled = true; const label = b.textContent; b.innerHTML = '<span class="spin"></span> revising';
+  if(!runId){ $('#out').insertAdjacentHTML('afterbegin','<p class="note warn">Make a plan first, then change the world.</p>'); return; }
+  b.disabled = true; const label = b.textContent; b.innerHTML = '<span class="spin"></span>Revising';
   try{
     const res = await fetch('/events', {method:'POST', headers:{'Content-Type':'application/json'},
       body: JSON.stringify({run_id: runId, event: EVENTS[b.dataset.ev]})});
-    if(!res.ok){ alert((await res.json()).detail); return; }
+    if(!res.ok){ return; }
     const data = await res.json();
     world = await (await fetch(`/runs/${runId}/world`)).json();
     renderEvent(data);
-    if(data.revised_plan){ lastPlan = data.revised_plan; draw(data.revised_plan); }
+    if(data.revised_plan) draw(data.revised_plan);
     loadTrace();
   } finally { b.disabled = false; b.textContent = label; }
 });
 
 /* ---------------------------------------------------------- render */
-function actionCard(a, escalated){
-  const ev = (a.evidence_ids||[]).length;
-  return `<div class="act ${esc(a.kind)}">
-    <div class="top"><span class="kind">${esc(a.kind.replace(/_/g,' '))}</span>
-      <span class="tgt">${esc(a.target)}</span></div>
-    <div class="detail">${esc(a.detail)}</div>
+function actionRow(a, escalated){
+  const held = escalated.has(a.action_id);
+  const cites = (a.evidence_ids||[]).length;
+  const verb = {evacuate_zone:'Evacuate', open_shelter:'Open', stage_supplies:'Stage at', hold:'Hold'}[a.kind] || a.kind;
+  return `<div class="act ${held?'held':''}">
+    <div class="top">
+      <span class="kind">${esc(verb)}</span>
+      <span class="tgt">${esc(a.target)}</span>
+      <span class="state">${held?'Needs your approval':'Committed'}</span>
+    </div>
+    <p class="detail">${esc(a.detail)}</p>
     <div class="meta">
-      <span class="pill">p${a.priority}</span>
-      <span class="pill">conf ${a.confidence.toFixed(2)}</span>
-      <span class="pill ${a.reversible?'ok':'irr'}">${a.reversible?'reversible':'irreversible'}</span>
-      ${escalated.has(a.action_id)?'<span class="pill esc">human approval</span>':'<span class="pill ok">auto-commit</span>'}
-      <span class="pill ev" title="${esc((a.evidence_ids||[]).join('\n'))}">${ev} evidence</span>
+      <span class="m"><b>priority</b> ${a.priority}</span>
+      <span class="m"><b>confidence</b> ${a.confidence.toFixed(2)}</span>
+      <span class="m">${a.reversible?'reversible':'cannot be undone'}</span>
+      <span class="m cite" title="${esc((a.evidence_ids||[]).join('\n'))}">${cites} facts cited</span>
     </div></div>`;
 }
 
@@ -261,27 +371,28 @@ function renderRun(d){
   const escalated = new Set(o.escalations.map(e=>e.action_id));
   const order = {evacuate_zone:0, open_shelter:1, stage_supplies:2, hold:3};
   const acts = [...o.plan.actions].sort((a,b)=>(order[a.kind]-order[b.kind])||(a.priority-b.priority));
+  const margin = m.capacity_margin || 0;
 
   $('#out').innerHTML = `
-    <h2>Outcome</h2>
-    <div class="stat"><span>status</span><b>${esc(d.status)}</b></div>
-    <div class="stat"><span>critic</span><b>${o.critique.accepted?'accepted':'refused'} @ ${o.critique.confidence.toFixed(2)}</b></div>
-    <div class="stat"><span>loop iterations</span><b>${d.iterations}</b></div>
-    <div class="stat"><span>expected evacuees</span><b>${(m.expected_evacuees||0).toLocaleString()}</b></div>
-    <div class="stat"><span>open shelter spaces</span><b>${(m.open_shelter_capacity||0).toLocaleString()}</b></div>
-    <div class="stat"><span>capacity margin</span><b style="color:${(m.capacity_margin||0)>=0?'var(--good)':'var(--bad)'}">${(m.capacity_margin||0).toLocaleString()}</b></div>
-    <div class="stat"><span>in-cone coverage</span><b>${((m.coverage_rate||0)*100).toFixed(0)}%</b></div>
-    <div class="stat"><span>held for a human</span><b>${o.escalations.length} of ${o.plan.actions.length}</b></div>
-    <div class="stat"><span>Zetaris queries</span><b>${d.zetaris_queries}</b></div>
-    <div class="stat"><span>engines</span><b>${o.memory_recalled.length?'WM · H-MEM · MK':'WM · MK'}</b></div>
-    <div class="stat"><span>models</span><b style="font-size:10.5px">${esc(d.models_used.join(', '))||'—'}</b></div>
-    <div class="stat"><span>elapsed</span><b>${d.execution_time_seconds}s</b></div>
+    <h2>${o.plan.actions.length} actions for the next 24 hours</h2>
+    <div class="outcome">
+      <div class="stat"><span>Shelter-seeking evacuees expected</span><b>${n(Math.round(m.expected_evacuees))}</b></div>
+      <div class="stat"><span>Spaces in the shelters being opened</span><b>${n(Math.round(m.open_shelter_capacity))}</b></div>
+      <div class="stat"><span>Margin</span><b class="${margin>=0?'good':'bad'}">${margin>=0?'+':''}${n(Math.round(margin))}</b></div>
+      <div class="stat"><span>Zones in the cone that are covered</span><b>${((m.coverage_rate||0)*100).toFixed(0)}%</b></div>
+      <div class="stat"><span>Waiting on you</span><b>${o.escalations.length} of ${o.plan.actions.length}</b></div>
+      <div class="stat"><span>Critic</span><b>${o.critique.accepted?'accepted':'refused'} at ${o.critique.confidence.toFixed(2)}</b></div>
+      <div class="stat"><span>Revisions before it settled</span><b>${d.iterations}</b></div>
+      <div class="stat"><span>Queries through Zetaris</span><b>${d.zetaris_queries}</b></div>
+      <div class="stat"><span>Models that answered</span><b>${esc(d.models_used.join(', ')) || 'none, fell back'}</b></div>
+      <div class="stat"><span>Time taken</span><b>${d.execution_time_seconds}s</b></div>
+    </div>
 
-    ${o.memory_recalled.length?`<h2>Recalled from earlier runs</h2>${o.memory_recalled.map(l=>`<div class="note">${esc(l)}</div>`).join('')}`:''}
-    ${o.unresolved_issues.length?`<h2>Unresolved &mdash; operator decision</h2>${o.unresolved_issues.map(u=>`<div class="note warn">${esc(u)}</div>`).join('')}`:''}
+    ${o.memory_recalled.length?`<section><h2>Carried over from earlier runs</h2>${o.memory_recalled.map(l=>`<p class="note">${esc(l)}</p>`).join('')}</section>`:''}
+    ${o.unresolved_issues.length?`<section><h2>Your call</h2>${o.unresolved_issues.map(u=>`<p class="note warn">${esc(u)}</p>`).join('')}</section>`:''}
 
-    <h2>Actions (${acts.length})</h2>${acts.map(a=>actionCard(a, escalated)).join('')}
-    <h2>Trace</h2><div class="trace" id="trace">loading&hellip;</div>`;
+    <section><h2>What it wants to do</h2>${acts.map(a=>actionRow(a, escalated)).join('')}</section>
+    <section><h2>How it got there</h2><div class="trace" id="trace">loading</div></section>`;
 }
 
 function renderEvent(d){
@@ -290,21 +401,22 @@ function renderEvent(d){
   const county = t => ({'071':'Lee','015':'Charlotte','115':'Sarasota','103':'Pinellas','057':'Hillsborough'}[t.split('-')[1]] || t);
   const footprint = p => { const c={}; (p?.actions||[]).filter(a=>a.kind==='evacuate_zone')
       .forEach(a=>{const k=county(a.target); c[k]=(c[k]||0)+1;});
-    return Object.keys(c).length ? Object.entries(c).sort().map(([k,v])=>`${k} ${v}`).join(', ') : 'none'; };
+    return Object.keys(c).length ? Object.entries(c).sort().map(([k,v])=>`${k} ${v}`).join(', ') : 'nothing'; };
 
   $('#out').insertAdjacentHTML('afterbegin', `
-    <h2>Change of mind &mdash; ${esc(d.event_type)}</h2>
-    <div class="stat"><span>beliefs changed</span><b>${d.changed_beliefs.length}</b></div>
-    <div class="stat"><span>decisions invalidated</span><b style="color:var(--bad)">${d.invalidated_decisions.length}</b></div>
-    <div class="stat"><span>decisions preserved</span><b style="color:var(--good)">${d.preserved_decisions.length}</b></div>
-    <div class="stat"><span>plan diff</span><b>+${dd.added.length} / &minus;${dd.removed.length} / ~${dd.changed.length}</b></div>
-    <div class="diff" style="margin-top:12px">
-      <div><h3>before</h3><div class="note">${esc(footprint(d.previous_plan))}</div></div>
-      <div><h3>after</h3><div class="note">${esc(footprint(d.revised_plan))}</div></div>
+    <h2>It changed its mind</h2>
+    <div class="outcome">
+      <div class="stat"><span>Beliefs that changed</span><b style="color:var(--cite)">${d.changed_beliefs.length}</b></div>
+      <div class="stat"><span>Decisions invalidated</span><b class="bad">${d.invalidated_decisions.length}</b></div>
+      <div class="stat"><span>Decisions left standing</span><b class="good">${d.preserved_decisions.length}</b></div>
     </div>
-    ${dd.added.length?`<h2>Newly ordered</h2>${dd.added.map(a=>actionCard(a, escalated)).join('')}`:''}
-    ${dd.removed.length?`<h2>Stood down (${dd.removed.length})</h2><div class="note">${dd.removed.map(esc).join(', ')}</div>`:''}
-    <hr style="border:0;border-top:1px solid var(--line);margin:18px 0">`);
+    <div class="diff">
+      <div><h3>Was evacuating</h3><p>${esc(footprint(d.previous_plan))}</p></div>
+      <div class="after"><h3>Now evacuating</h3><p>${esc(footprint(d.revised_plan))}</p></div>
+    </div>
+    ${dd.added.length?`<section><h2>Newly ordered</h2>${dd.added.map(a=>actionRow(a, escalated)).join('')}</section>`:''}
+    ${dd.removed.length?`<section><h2>Stood down</h2><p class="note">${dd.removed.map(esc).join(', ')}</p></section>`:''}
+    <hr style="border:0;border-top:1px solid var(--rule);margin:22px 0">`);
 }
 
 /* ---------------------------------------------------------- map */
@@ -318,43 +430,42 @@ function draw(plan){
 
   const cone = world.beliefs?.['hazard:cone_polygon']?.value;
   if(Array.isArray(cone) && cone.length>2){
-    L.polygon(cone, {color:'#f0a93b', weight:1.5, fillOpacity:.1, dashArray:'5,5'})
-      .bindPopup(`forecast cone &middot; advisory ${esc(world.beliefs['hazard:advisory_number']?.value)}`).addTo(layer);
+    L.polygon(cone, {color:'#e8913a', weight:1.5, fillOpacity:.08, dashArray:'6,5'})
+      .bindPopup(`Forecast cone, advisory ${esc(world.beliefs['hazard:advisory_number']?.value)}`).addTo(layer);
   }
   const centre = world.beliefs?.['hazard:center']?.value;
   if(centre?.lat) L.circleMarker([centre.lat, centre.lon],
-    {radius:8, color:'#f0a93b', weight:2, fillColor:'#f0a93b', fillOpacity:.55})
-    .bindPopup(`storm centre &middot; ${esc(world.beliefs['hazard:max_wind_kt']?.value)} kt`).addTo(layer);
+    {radius:8, color:'#e8913a', weight:2, fillColor:'#e8913a', fillOpacity:.5})
+    .bindPopup(`Storm centre, ${esc(world.beliefs['hazard:max_wind_kt']?.value)} kt`).addTo(layer);
 
   ents.forEach(e => {
     if(e.lat == null || e.lon == null) return;
     if(e.kind === 'zone'){
       const on = evac.has(e.entity_id);
       L.circleMarker([e.lat, e.lon], {radius: 5 + (e.vulnerability_score||0)*7,
-        color: on?'#f06a5d':'#8b98a8', weight: on?2:1,
-        fillColor: on?'#f06a5d':'#8b98a8', fillOpacity: on?.55:.2})
+        color: on?'#d9544d':'#8595a3', weight: on?2:1,
+        fillColor: on?'#d9544d':'#8595a3', fillOpacity: on?.5:.16})
         .bindPopup(`<b>${esc(e.entity_id)}</b><br>${esc(e.county)} County<br>
-          population ${(e.population||0).toLocaleString()}<br>
-          vulnerability <b>${(e.vulnerability_score||0).toFixed(2)}</b><br>
-          ${on?'<span style="color:#f06a5d">evacuation ordered</span>':'no action'}`).addTo(layer);
+          ${n(e.population)} people<br>
+          vulnerability ${(e.vulnerability_score||0).toFixed(2)}<br>
+          ${on?'being evacuated':'no action'}`).addTo(layer);
     } else if(e.kind === 'shelter'){
       const on = opened.has(e.entity_id);
       const free = Math.max(0,(e.capacity||0)-(e.current_occupancy||0));
       L.marker([e.lat, e.lon], {icon: L.divIcon({className:'', html:
-        `<div style="width:11px;height:11px;border-radius:2px;background:${on?'#56cc8e':'#2f3a4a'};
-          border:1.5px solid ${on?'#56cc8e':'#49566a'}"></div>`, iconSize:[11,11]})})
-        .bindPopup(`<b>${esc(e.name||e.entity_id)}</b><br>${esc(e.entity_id)} &middot; ${esc(e.county)}<br>
-          capacity ${(e.capacity||0).toLocaleString()}, free <b>${free.toLocaleString()}</b><br>
-          ${on?'<span style="color:#56cc8e">opened by this plan</span>':'not opened'}`).addTo(layer);
+        `<div style="width:10px;height:10px;border-radius:2px;background:${on?'#4fb286':'#223040'};
+          border:1.5px solid ${on?'#4fb286':'#36465a'}"></div>`, iconSize:[10,10]})})
+        .bindPopup(`<b>${esc(e.name||e.entity_id)}</b><br>${esc(e.county)} County<br>
+          ${n(free)} spaces free of ${n(e.capacity)}<br>${on?'opened by this plan':'not opened'}`).addTo(layer);
     } else if(e.kind === 'staging_site'){
       const on = staged.has(e.entity_id);
       L.marker([e.lat, e.lon], {icon: L.divIcon({className:'', html:
         `<div style="width:0;height:0;border-left:7px solid transparent;border-right:7px solid transparent;
-          border-bottom:12px solid ${on?'#4da3ff':'#36425a'}"></div>`, iconSize:[14,12]})})
-        .bindPopup(`<b>${esc(e.name||e.entity_id)}</b><br>${esc(e.county)}<br>${on?'<span style="color:#4da3ff">staging here</span>':'not used'}`).addTo(layer);
+          border-bottom:12px solid ${on?'#5aa7e8':'#2a3a4c'}"></div>`, iconSize:[14,12]})})
+        .bindPopup(`<b>${esc(e.name||e.entity_id)}</b><br>${esc(e.county)} County<br>${on?'staging here':'not used'}`).addTo(layer);
     } else if(e.kind === 'road_event' && e.status === 'closed'){
-      L.circleMarker([e.lat, e.lon], {radius:5, color:'#f06a5d', weight:2, fillOpacity:0})
-        .bindPopup(`<b>closed</b><br>${esc(e.route)}`).addTo(layer);
+      L.circleMarker([e.lat, e.lon], {radius:5, color:'#d9544d', weight:2, fillOpacity:0})
+        .bindPopup(`<b>Closed</b><br>${esc(e.route)}`).addTo(layer);
     }
   });
 
