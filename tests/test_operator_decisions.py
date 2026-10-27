@@ -13,6 +13,12 @@ from app.engines.hmem.engine import HMem
 REPO = Path(__file__).resolve().parent.parent
 EXAMPLES = REPO / "input_examples"
 
+SHELTER_FULL = {
+    "type": "shelter_capacity",
+    "payload": {"shelter_id": "S-071-2", "capacity": 1500, "current_occupancy": 1500,
+                "status": "at_capacity", "updated_at": "2022-09-27T14:00Z"},
+}
+
 TRACK_SOUTH = {
     "type": "advisory_update",
     "payload": {
@@ -35,6 +41,10 @@ def client(tmp_path, monkeypatch):
         yield c
 
 
+def _decide(client, body, **fields):
+    return client.post("/runs/op-test/decisions", json={"plan_id": body["output"]["plan"]["plan_id"], **fields})
+
+
 def _plan(client, run_id="op-test"):
     payload = json.loads((EXAMPLES / "example_1.json").read_text(encoding="utf-8"))
     payload["run_id"] = run_id
@@ -48,9 +58,9 @@ def _plan(client, run_id="op-test"):
 
 
 def test_approving_a_held_action_records_it_and_shrinks_the_queue(client):
-    _body, held, _ = _plan(client)
+    body, held, _ = _plan(client)
 
-    res = client.post("/runs/op-test/decisions", json={"action_id": held[0], "decision": "approve"})
+    res = _decide(client, body, action_id=held[0], decision="approve")
 
     assert res.status_code == 200, res.text
     out = res.json()
@@ -65,20 +75,19 @@ def test_approving_a_held_action_records_it_and_shrinks_the_queue(client):
 
 
 def test_approval_marks_the_world_model_decision_committed(client):
-    _, held, _ = _plan(client)
+    body, held, _ = _plan(client)
 
-    client.post("/runs/op-test/decisions", json={"action_id": held[0], "decision": "approve"})
+    _decide(client, body, action_id=held[0], decision="approve")
 
     world = client.get("/runs/op-test/world").json()
     assert world["decisions"][held[0]]["status"] == "committed"
 
 
 def test_declining_writes_a_trace_line_and_a_memory_episode(client):
-    _body, held, _ = _plan(client)
+    body, held, _ = _plan(client)
     note = "Shelter staff cannot reach it before the bridge closes"
 
-    res = client.post("/runs/op-test/decisions",
-                      json={"action_id": held[1], "decision": "decline", "note": note})
+    res = _decide(client, body, action_id=held[1], decision="decline", note=note)
     assert res.status_code == 200, res.text
 
     trace = client.get("/runs/op-test/trace").text
@@ -95,26 +104,27 @@ def test_declining_writes_a_trace_line_and_a_memory_episode(client):
 
 
 def test_deciding_an_action_that_was_not_held_is_refused(client):
-    _, _, committed = _plan(client)
+    body, _, committed = _plan(client)
 
-    res = client.post("/runs/op-test/decisions", json={"action_id": committed[0], "decision": "approve"})
+    res = _decide(client, body, action_id=committed[0], decision="approve")
 
     assert res.status_code == 409
     assert committed[0] in res.json()["detail"]
 
 
 def test_unknown_run_and_unknown_action_are_404(client):
-    _, held, _ = _plan(client)
+    body, held, _ = _plan(client)
+    pid = body["output"]["plan"]["plan_id"]
 
-    assert client.post("/runs/nope/decisions", json={"action_id": held[0], "decision": "approve"}).status_code == 404
-    assert client.post("/runs/op-test/decisions", json={"action_id": "ACT-999", "decision": "approve"}).status_code == 404
+    assert client.post("/runs/nope/decisions", json={"plan_id": pid, "action_id": held[0], "decision": "approve"}).status_code == 404
+    assert _decide(client, body, action_id="ACT-999", decision="approve").status_code == 404
 
 
 def test_a_second_decision_on_the_same_action_replaces_the_first(client):
-    _, held, _ = _plan(client)
+    body, held, _ = _plan(client)
 
-    client.post("/runs/op-test/decisions", json={"action_id": held[0], "decision": "approve"})
-    res = client.post("/runs/op-test/decisions", json={"action_id": held[0], "decision": "decline"})
+    _decide(client, body, action_id=held[0], decision="approve")
+    res = _decide(client, body, action_id=held[0], decision="decline")
 
     assert res.status_code == 200
     listed = client.get("/runs/op-test/decisions").json()
@@ -123,19 +133,20 @@ def test_a_second_decision_on_the_same_action_replaces_the_first(client):
 
 def test_change_of_mind_carries_decisions_by_action_not_by_number(client):
     """A revision renumbers actions, so an approval must follow the action it
-    was given for (kind + target), drop when that action is invalidated or gone,
-    and never attach itself to whatever now carries the old number."""
+    was given for (kind + target) when that action was preserved, and never
+    attach itself to whatever now carries the old number."""
     body, held, _ = _plan(client)
+    pid = _plan_id(body)
     old = {a["action_id"]: (a["kind"], a["target"]) for a in body["output"]["plan"]["actions"]}
     for action_id in held:
         assert client.post("/runs/op-test/decisions",
-                           json={"action_id": action_id, "decision": "approve"}).status_code == 200
+                           json={"plan_id": pid, "action_id": action_id, "decision": "approve"}).status_code == 200
     approved = {old[i] for i in held}
 
-    res = client.post("/events", json={"run_id": "op-test", "event": TRACK_SOUTH})
+    res = client.post("/events", json={"run_id": "op-test", "event": SHELTER_FULL})
     assert res.status_code == 200, res.text
     event = res.json()
-    invalidated = {old[i] for i in event["invalidated_decisions"] if i in old}
+    invalidated = {old[i] for i in event["invalidated_decisions"]}
     revised = {a["action_id"]: (a["kind"], a["target"]) for a in event["revised_plan"]["actions"]}
     still_held = {e["action_id"] for e in event["escalations"]}
 
@@ -148,5 +159,92 @@ def test_change_of_mind_carries_decisions_by_action_not_by_number(client):
         assert pair in approved
         assert pair not in invalidated
         assert new_id in still_held
-    assert set(kept.values()) < approved, "something the operator approved must have dropped out"
     assert listed["pending"] == len(still_held) - len(kept)
+
+
+def _plan_id(body):
+    return body["output"]["plan"]["plan_id"]
+
+
+def test_a_decision_names_the_plan_it_answers(client):
+    body, held, _ = _plan(client)
+
+    missing = client.post("/runs/op-test/decisions", json={"action_id": held[0], "decision": "approve"})
+    assert missing.status_code == 422
+
+    stale = client.post("/runs/op-test/decisions",
+                        json={"action_id": held[0], "decision": "approve", "plan_id": "plan-from-yesterday"})
+    assert stale.status_code == 409
+    assert "plan" in stale.json()["detail"]
+
+    right = client.post("/runs/op-test/decisions",
+                        json={"action_id": held[0], "decision": "approve", "plan_id": _plan_id(body)})
+    assert right.status_code == 200
+
+
+def test_changing_a_decision_leaves_the_world_model_consistent(client):
+    body, held, _ = _plan(client)
+    pid = _plan_id(body)
+    post = lambda **kw: client.post("/runs/op-test/decisions", json={"plan_id": pid, **kw})  # noqa: E731
+
+    post(action_id=held[0], decision="decline", note="first reason")
+    post(action_id=held[0], decision="approve")
+    world = client.get("/runs/op-test/world").json()["decisions"][held[0]]
+    assert world["status"] == "committed"
+    assert world["invalidated_reason"] is None
+
+    post(action_id=held[1], decision="decline", note="first reason", operator="op1")
+    post(action_id=held[1], decision="decline", note="second reason", operator="op2")
+    world = client.get("/runs/op-test/world").json()["decisions"][held[1]]
+    assert world["status"] == "invalidated"
+    assert "second reason" in world["invalidated_reason"]
+    assert "op2" in world["invalidated_reason"]
+
+
+def test_memory_keeps_only_the_final_verdict_on_an_action(client):
+    body, held, _ = _plan(client)
+    pid = _plan_id(body)
+
+    client.post("/runs/op-test/decisions", json={"plan_id": pid, "action_id": held[0], "decision": "decline", "note": "no staff"})
+    client.post("/runs/op-test/decisions", json={"plan_id": pid, "action_id": held[0], "decision": "approve"})
+
+    episodes = [m for m in HMem(client.store).all_items() if "operator" in m.tags]
+    assert len(episodes) == 1
+    assert "approved" in episodes[0].statement
+
+
+def test_notes_and_names_are_capped_server_side(client):
+    body, held, _ = _plan(client)
+    pid = _plan_id(body)
+
+    long_note = client.post("/runs/op-test/decisions",
+                            json={"plan_id": pid, "action_id": held[0], "decision": "approve", "note": "x" * 201})
+    long_name = client.post("/runs/op-test/decisions",
+                            json={"plan_id": pid, "action_id": held[0], "decision": "approve", "operator": "y" * 41})
+
+    assert long_note.status_code == 422
+    assert long_name.status_code == 422
+
+
+def test_a_decision_on_an_invalidated_action_does_not_follow_it_into_the_new_plan(client):
+    """Advisory 23 moves the cone. Evacuations that cited the old cone are
+    invalidated; an approval given against the old cone must not reappear on
+    the same zone in the revised plan, even though it is still held there."""
+    body, held, _ = _plan(client)
+    pid = _plan_id(body)
+    old = {a["action_id"]: (a["kind"], a["target"]) for a in body["output"]["plan"]["actions"]}
+    for action_id in held:
+        assert client.post("/runs/op-test/decisions",
+                           json={"plan_id": pid, "action_id": action_id, "decision": "approve"}).status_code == 200
+
+    event = client.post("/events", json={"run_id": "op-test", "event": TRACK_SOUTH}).json()
+    invalidated_held = {old[i] for i in event["invalidated_decisions"] if i in held}
+    revised = {(a["kind"], a["target"]): a["action_id"] for a in event["revised_plan"]["actions"]}
+    still_held = {e["action_id"] for e in event["escalations"]}
+    assert invalidated_held, "the shift must invalidate at least one held evacuation"
+
+    kept = {(d["kind"], d["target"]) for d in client.get("/runs/op-test/decisions").json()["decisions"]}
+    assert not (kept & invalidated_held)
+    # and the ones that were preserved did carry, under their new numbers
+    preserved_held = {old[i] for i in held} - invalidated_held
+    assert kept == {p for p in preserved_held if revised.get(p) in still_held}

@@ -16,6 +16,7 @@ Lessons go back into H-MEM at the end, so the next run starts better informed.
 
 from __future__ import annotations
 
+import threading
 import time
 from dataclasses import dataclass, field
 from datetime import UTC, datetime, timedelta
@@ -73,6 +74,9 @@ class RunState:
     lessons: list[str] = field(default_factory=list)
     # What a human has said about the held actions, keyed by action_id.
     decisions: dict[str, OperatorDecision] = field(default_factory=dict)
+    # Held while a revision or a decision changes plan, escalations and
+    # decisions together, so neither sees the other half-done.
+    lock: threading.RLock = field(default_factory=threading.RLock, repr=False, compare=False)
 
 
 RUNS: dict[str, RunState] = {}
@@ -236,6 +240,16 @@ class Orchestrator:
         analyst = Analyst(ctx)
         planner, simulator, critic, risk = Planner(ctx), Simulator(ctx), Critic(ctx), Risk(ctx)
 
+        with state.lock:
+            return self._apply_event_locked(
+                state, event, started, reviser, analyst, planner, simulator, critic, risk, zetaris, nightshift
+            )
+
+    def _apply_event_locked(
+        self, state: RunState, event: Event, started: float, reviser, analyst, planner, simulator, critic, risk,
+        zetaris, nightshift,
+    ) -> EventResponse:
+        run_id = state.run_id
         try:
             state.tracer.log(
                 agent_name="Orchestrator",
@@ -348,6 +362,16 @@ class Orchestrator:
         state = RUNS.get(run_id)
         if state is None:
             raise KeyError(f"unknown run_id {run_id!r}; POST /run first")
+        with state.lock:
+            return self._decide_locked(state, request)
+
+    def _decide_locked(self, state: RunState, request: OperatorDecisionRequest) -> DecisionResponse:
+        run_id = state.run_id
+        if request.plan_id != state.plan.plan_id:
+            raise ValueError(
+                f"decision names plan {request.plan_id!r} but the current plan is {state.plan.plan_id!r}; "
+                "the plan was revised, reload it and decide again"
+            )
         action = state.plan.by_id().get(request.action_id)
         if action is None:
             raise KeyError(f"unknown action_id {request.action_id!r} in run {run_id!r}")
@@ -385,6 +409,9 @@ class Orchestrator:
         statement = f"Operator {verb} {action.kind} {action.target} at {state.replay_hour}"
         if decision.note:
             statement += f": {decision.note}"
+        # Memory keeps the verdict, not the argument: a changed mind replaces
+        # the earlier episode on this action instead of contradicting it.
+        state.memory.forget(f"operator:{action.kind}:{action.target}", run_id=run_id)
         state.memory.remember(
             f"operator:{action.kind}:{action.target}",
             statement,
@@ -403,7 +430,8 @@ class Orchestrator:
         state = RUNS.get(run_id)
         if state is None:
             raise KeyError(f"unknown run_id {run_id!r}; POST /run first")
-        return self._decision_response(state, None)
+        with state.lock:
+            return self._decision_response(state, None)
 
     @staticmethod
     def _carry_decisions(
@@ -433,13 +461,16 @@ class Orchestrator:
             carried[target_id] = decision.model_copy(update={"action_id": target_id})
         return carried
 
-    def _apply_decision_to_world(self, state: RunState, decision: OperatorDecision) -> None:
+    @staticmethod
+    def _apply_decision_to_world(state: RunState, decision: OperatorDecision) -> None:
         if decision.decision == "approve":
             state.world.set_decision_status(decision.action_id, "committed")
         else:
-            state.world.invalidate([decision.action_id], f"declined by {decision.operator}")
+            reason = f"declined by {decision.operator}" + (f": {decision.note}" if decision.note else "")
+            state.world.set_decision_status(decision.action_id, "invalidated", reason=reason)
 
-    def _decision_response(self, state: RunState, decision: OperatorDecision | None) -> DecisionResponse:
+    @staticmethod
+    def _decision_response(state: RunState, decision: OperatorDecision | None) -> DecisionResponse:
         pending = sum(1 for e in state.escalations if e.action_id not in state.decisions)
         return DecisionResponse(
             run_id=state.run_id,
@@ -550,7 +581,11 @@ class Orchestrator:
         self, memory: HMem, request: RunRequest, tracer: Tracer, world: WorldModel
     ) -> list[str]:
         tags = [request.input.scenario, *[c.lower() for c in request.input.region]]
-        items = memory.recall(tags, limit=5)
+        # Two separate recalls: what the data taught, and what operators
+        # decided. Kept apart so a busy operator cannot crowd the shelter
+        # lesson that drives a derate out of the top slots.
+        items = memory.recall(tags, limit=5, exclude_tags=["operator"])
+        items += memory.recall(tags, limit=3, require_tags=["operator"])
         lessons = [item.statement for item in items]
 
         # A lesson about a shelter filling early becomes a derate the Planner

@@ -20,10 +20,12 @@ Run Pulsar 5 at that hour and it plans for Tampa, because that is what the evide
 BEFORE  advisory 15 (Tampa cone)      Charlotte 2 · Hillsborough 3 · Pinellas 3 · Sarasota 3
 AFTER   advisory 23 (Fort Myers cone) Charlotte 3 · Lee 3 · Pinellas 1 · Sarasota 2
 
-27 beliefs changed · 11 decisions invalidated · 36 preserved · plan diff +4 / −6 / ~31
+19 beliefs changed · 9 decisions invalidated · 20 preserved · plan diff +4 / −6 / ~31
 ```
 
 Lee County enters with all three zones. Hillsborough stands down. **Sarasota is preserved** — it was in both cones, so the decisions that cited it were never invalidated. That is the difference between a targeted replan and starting over.
+
+How that is decided: every evacuation cites its zone's `zone:<id>:in_cone` belief, derived from the cone polygon by the Analyst at gather time and re-derived by the Belief Reviser on every advisory. A track shift changes that belief only for the zones that changed sides (seven left the cone, two entered it), so only the nine decisions that cited those zones are invalidated. A belief re-asserted with a newer timestamp but the same value is confirmed, not changed, and unsettles nothing. The accounting counts the plan on the table: when a plan replaces an earlier Planner iteration, the earlier decisions are marked superseded and never appear in these numbers again. These figures replace the 27 / 11 / 36 quoted in the submitted deck and video; see [docs/SUBMISSION.md](docs/SUBMISSION.md) for what changed and why.
 
 And at advisory 15, hours before any forecast pointed there, Pulsar 5 had already put this in front of the operator:
 

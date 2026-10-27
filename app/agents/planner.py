@@ -60,7 +60,9 @@ class Planner(Agent):
 
     def __init__(self, ctx) -> None:
         super().__init__(ctx)
-        self._counter = 0
+        # Continue where the last Planner on this world stopped, so a revision
+        # never hands out an action number the World Model already knows.
+        self._counter = self.world.next_decision_number()
 
     # ----------------------------------------------------------------- propose
 
@@ -298,8 +300,8 @@ class Planner(Agent):
             evidence = [
                 f"zone:{zone_id}:population",
                 f"zone:{zone_id}:vulnerability",
-                "hazard:cone_polygon",
-                "hazard:advisory_number",
+                f"zone:{zone_id}:in_cone",
+                *([] if zone.get("_in_cone") else ["hazard:cone_polygon"]),
             ]
             actions.append(
                 PlanAction(
@@ -441,7 +443,9 @@ class Planner(Agent):
         return plan
 
     def _record_decisions(self, plan: Plan) -> None:
-        """Mirror every action into the World Model decision graph with its deps."""
+        """Mirror every action into the World Model decision graph with its deps,
+        and retire whatever this plan replaces."""
+        self.world.supersede_except(a.action_id for a in plan.actions)
         for action in plan.actions:
             self.world.record_decision(
                 action.action_id,

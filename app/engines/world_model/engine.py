@@ -72,6 +72,9 @@ class Belief:
         }
 
 
+LIVE_STATUSES = frozenset({"active", "escalated", "committed"})
+
+
 @dataclass(frozen=True)
 class Decision:
     decision_id: str
@@ -79,7 +82,7 @@ class Decision:
     target: str
     detail: str
     depends_on: tuple[str, ...] = ()
-    status: str = "active"  # active | invalidated | committed | escalated
+    status: str = "active"  # active | escalated | committed | invalidated | superseded
     made_by: str = "Planner"
     confidence: float = 0.5
     created_at: str = field(default_factory=utc_now_iso)
@@ -289,9 +292,44 @@ class WorldModel:
         return [d for d in values if status is None or d.status == status]
 
     def depends_on_any(self, fact_ids: Iterable[str]) -> list[Decision]:
-        """Active decisions that cite at least one of these belief ids."""
+        """Live decisions that cite at least one of these belief ids.
+
+        Live means active, escalated or committed: the plan on the table. A
+        committed decision whose facts changed must be revisited just like a
+        held one; only invalidated and superseded records are out of play.
+        """
         wanted = set(fact_ids)
-        return [d for d in self.decisions(status="active") if wanted & set(d.depends_on)]
+        return [d for d in self.decisions() if d.status in LIVE_STATUSES and wanted & set(d.depends_on)]
+
+    def live_decisions(self) -> list[Decision]:
+        return [d for d in self.decisions() if d.status in LIVE_STATUSES]
+
+    def supersede_except(self, keep: Iterable[str]) -> list[Decision]:
+        """A new plan replaced the old one: every live decision not in it is
+        superseded, so later revisions reason about the plan on the table and
+        not about iterations the Critic already rejected."""
+        keep_ids = set(keep)
+        changed: list[Decision] = []
+        with self._lock:
+            for decision_id, existing in list(self._decisions.items()):
+                if decision_id in keep_ids or existing.status not in LIVE_STATUSES:
+                    continue
+                updated = replace(existing, status="superseded")
+                self._decisions[decision_id] = updated
+                self._revision += 1
+                changed.append(updated)
+        return changed
+
+    def next_decision_number(self) -> int:
+        """The highest numeric suffix among recorded decision ids, so a new
+        Planner can keep numbering where the last one stopped."""
+        highest = 0
+        with self._lock:
+            for decision_id in self._decisions:
+                tail = decision_id.rsplit("-", 1)[-1]
+                if tail.isdigit():
+                    highest = max(highest, int(tail))
+        return highest
 
     def invalidate(self, decision_ids: Iterable[str], reason: str) -> list[Decision]:
         changed: list[Decision] = []
@@ -306,12 +344,13 @@ class WorldModel:
                 changed.append(updated)
         return changed
 
-    def set_decision_status(self, decision_id: str, status: str) -> Decision | None:
+    def set_decision_status(self, decision_id: str, status: str, *, reason: str | None = None) -> Decision | None:
+        """Set a decision's status; the reason is kept only while it is invalidated."""
         with self._lock:
             existing = self._decisions.get(decision_id)
             if existing is None:
                 return None
-            updated = replace(existing, status=status)
+            updated = replace(existing, status=status, invalidated_reason=reason if status == "invalidated" else None)
             self._decisions[decision_id] = updated
             self._revision += 1
             return updated

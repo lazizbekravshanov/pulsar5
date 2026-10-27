@@ -18,6 +18,7 @@ from __future__ import annotations
 
 import json
 import threading
+import uuid
 from collections.abc import Iterable
 from dataclasses import asdict, dataclass, field
 from pathlib import Path
@@ -57,6 +58,8 @@ class HMem:
         self.store_path = store_path or (HMEM_DIR / "store.json")
         self._lock = threading.RLock()
         self._items: dict[str, MemoryItem] = {}
+        # Ids forgotten here must not come back from the file on the next merge.
+        self._forgotten: set[str] = set()
         self._load()
 
     # ------------------------------------------------------------ persistence
@@ -76,7 +79,24 @@ class HMem:
             self._items[item.memory_id] = item
 
     def flush(self) -> Path:
+        """Write the store, merging whatever another process wrote meanwhile.
+
+        Several runs can hold their own HMem on the same file; each one only
+        adds, so the union is the truth, minus what this one forgot on purpose.
+        """
         with self._lock:
+            if self.store_path.exists():
+                try:
+                    blob = json.loads(self.store_path.read_text(encoding="utf-8"))
+                except json.JSONDecodeError:
+                    blob = {}
+                for raw in blob.get("items", []):
+                    try:
+                        item = MemoryItem(**raw)
+                    except TypeError:
+                        continue
+                    if item.memory_id not in self._items and item.memory_id not in self._forgotten:
+                        self._items[item.memory_id] = item
             payload = {
                 "updated_at": utc_now_iso(),
                 "items": [item.to_dict() for item in self._items.values()],
@@ -102,7 +122,7 @@ class HMem:
     ) -> MemoryItem:
         with self._lock:
             tag_list = sorted({t.lower() for t in tags if t})
-            memory_id = f"{level}:{subject}:{len(self._items)}"
+            memory_id = f"{level}:{subject}:{uuid.uuid4().hex[:10]}"
             item = MemoryItem(
                 memory_id=memory_id,
                 level=level,
@@ -116,6 +136,20 @@ class HMem:
             self._items[memory_id] = item
             return item
 
+    def forget(self, subject: str, *, run_id: str | None = None) -> int:
+        """Drop episodes about a subject (from one run, if given). Used when a
+        later statement replaces an earlier one, such as an operator changing
+        a decision, so memory keeps the verdict and not the argument."""
+        with self._lock:
+            doomed = [
+                i.memory_id for i in self._items.values()
+                if i.level == LEVEL_EPISODE and i.subject == subject and (run_id is None or i.run_id == run_id)
+            ]
+            for memory_id in doomed:
+                del self._items[memory_id]
+                self._forgotten.add(memory_id)
+            return len(doomed)
+
     def consolidate(self) -> list[MemoryItem]:
         """Promote repeated episodes about the same subject into an L1 lesson."""
         with self._lock:
@@ -126,21 +160,24 @@ class HMem:
 
             promoted: list[MemoryItem] = []
             for subject, episodes in by_subject.items():
-                if len(episodes) < _PROMOTE_AFTER:
+                # A pattern is the same thing seen in different runs. One run
+                # repeating itself is one sighting.
+                runs = sorted({e.run_id for e in episodes if e.run_id})
+                sightings = len(runs) if runs else len(episodes)
+                if sightings < _PROMOTE_AFTER:
                     continue
                 already = any(
                     i.level == LEVEL_LESSON and i.subject == subject for i in self._items.values()
                 )
                 if already:
                     continue
-                runs = sorted({e.run_id for e in episodes if e.run_id})
                 tags = sorted({t for e in episodes for t in e.tags})
                 lesson = self.remember(
                     subject,
-                    f"Seen in {len(episodes)} runs: {episodes[-1].statement}",
+                    f"Seen in {sightings} runs: {episodes[-1].statement}",
                     level=LEVEL_LESSON,
                     tags=tags,
-                    confidence=min(0.95, 0.6 + 0.1 * len(episodes)),
+                    confidence=min(0.95, 0.6 + 0.1 * sightings),
                     evidence=[e.memory_id for e in episodes],
                 )
                 lesson.run_id = runs[-1] if runs else None
@@ -149,9 +186,21 @@ class HMem:
 
     # ----------------------------------------------------------------- reading
 
-    def recall(self, tags: Iterable[str], *, limit: int = 5, min_level: str | None = None) -> list[MemoryItem]:
-        """Rank by tag overlap, then level (standing > lesson > episode), then confidence."""
+    def recall(
+        self,
+        tags: Iterable[str],
+        *,
+        limit: int = 5,
+        min_level: str | None = None,
+        require_tags: Iterable[str] = (),
+        exclude_tags: Iterable[str] = (),
+    ) -> list[MemoryItem]:
+        """Rank by tag overlap, then level (standing > lesson > episode), then
+        confidence. `require_tags` and `exclude_tags` let a caller keep kinds of
+        memory apart, so one kind cannot crowd another out of the top slots."""
         wanted = {t.lower() for t in tags if t}
+        required = {t.lower() for t in require_tags if t}
+        excluded = {t.lower() for t in exclude_tags if t}
         level_rank = {LEVEL_STANDING: 2, LEVEL_LESSON: 1, LEVEL_EPISODE: 0}
 
         with self._lock:
@@ -161,7 +210,12 @@ class HMem:
         for item in candidates:
             if min_level and level_rank.get(item.level, 0) < level_rank.get(min_level, 0):
                 continue
-            overlap = len(wanted & set(item.tags))
+            item_tags = set(item.tags)
+            if required and not required <= item_tags:
+                continue
+            if excluded & item_tags:
+                continue
+            overlap = len(wanted & item_tags)
             if overlap == 0 and item.level != LEVEL_STANDING:
                 continue
             scored.append((overlap, level_rank.get(item.level, 0), item.confidence, item))

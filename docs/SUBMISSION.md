@@ -84,6 +84,15 @@ Regenerate after any change with `cd ~/pet/videos/pulsar5-demo && python3 narrat
 
 ---
 
+## Corrections after submission
+
+The deck, the video and the form text all say that at advisory 23, 27 beliefs change, 11 decisions are invalidated and 36 are preserved. After the deadline a review of the operator-decision commit found two faults underneath those numbers, both older than the hackathon week:
+
+- The Belief Reviser only looked at decisions in the `active` state. After Risk classification every decision in the final plan is `escalated` or `committed`, so the "active" ones were the leftovers of Planner iterations the Critic had already rejected. The 11 invalidated and 36 preserved were counted over those leftovers plus the plan, which is why 36 is larger than a 29-action plan.
+- Every evacuation cited the raw `hazard:cone_polygon` and `hazard:advisory_number`, so any advisory update invalidated every evacuation, including zones that sat inside both cones. The per-zone `in_cone` belief existed but nothing depended on it.
+
+Both are fixed on main (commit "Make the change of mind count the plan on the table"): decisions are marked superseded when a plan replaces them, the Reviser reasons over the live plan, evacuations cite their zone's derived cone membership, and a belief re-asserted with the same value does not count as a change. The same run now reads **19 beliefs changed, 9 decisions invalidated, 20 preserved**: the seven Tampa Bay zones that left the cone and the two Charlotte zones that entered it are revisited, the two Sarasota zones inside both cones keep their decisions. The footprint change the video shows is unchanged: Hillsborough stands down, Lee County enters. The submitted artifacts are left as they were submitted.
+
 ## 3. Form checklist
 
 - [ ] Teammates added **before** creating the submission (roster locks): Lazizbek, Anish Posim Reddy, Balaji Moka

@@ -212,7 +212,8 @@
   .seg button[aria-pressed="true"] b{color:var(--quiet)}
   .acts[data-show="held"] .act:not(.held){display:none}
   .acts[data-show="held"] .act.decided{display:none}
-  .acts[data-show="auto"] .act.held{display:none}
+  .acts[data-show="auto"] .act.held:not(.decided.approve){display:none}
+  .act .fresh{font:600 10.5px/1 var(--mono);color:var(--survey);border:1px solid var(--survey);border-radius:2px;padding:2px 5px;letter-spacing:.04em}
 
   /* After a change of mind the earlier plan is history, kept but dimmed. */
   details.prior{margin-top:22px;border-top:1px solid var(--rule);padding-top:12px}
@@ -373,7 +374,10 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
 <script>
 const $ = s => document.querySelector(s);
-const esc = s => String(s ?? '').replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+/* FastAPI's error detail is a string for our own errors and a list for
+   validation errors; either way one readable line. */
+const detail = d => Array.isArray(d) ? d.map(x => `${(x.loc||[]).slice(1).join('.')}: ${x.msg}`).join('; ') : String(d ?? '');
 const n = x => (x ?? 0).toLocaleString();
 
 const map = L.map('map', {zoomControl:true, attributionControl:false}).setView([27.1,-82.2], 8);
@@ -427,7 +431,7 @@ async function withRun(send){
 }
 /* The plan on screen, by action id, and what the operator has said about the
    held ones. Both are rebuilt on every plan and every revision. */
-let actionsById = {}, escalatedIds = new Set(), decisions = {};
+let actionsById = {}, escalatedIds = new Set(), decisions = {}, planId = null;
 /* The request that built the current plan, so an event can rebuild the
    world it was planned against. Cleared and refilled on every Plan. */
 let planRequest = null;
@@ -552,7 +556,7 @@ function verdictLine(d){
     <button type="button" class="link" data-change="${esc(d.action_id)}">Change</button></div>`;
 }
 
-function actionRow(a, escalated){
+function actionRow(a, escalated, fresh){
   const held = escalated.has(a.action_id);
   const d = held ? decisions[a.action_id] : null;
   const cites = (a.evidence_ids||[]).length;
@@ -562,6 +566,7 @@ function actionRow(a, escalated){
     <div class="top">
       <span class="kind">${esc(verb)}</span>
       <button type="button" class="tgt" title="Show on the map">${esc(a.target)}</button>
+      ${fresh?'<span class="fresh">new</span>':''}
       <span class="state">${state}</span>
     </div>
     <p class="detail">${esc(a.detail)}</p>
@@ -579,8 +584,12 @@ function pendingCount(){
   return [...escalatedIds].filter(id => !decisions[id]).length;
 }
 function refreshCounts(){
-  const w = $('#waiting'); if(w) w.textContent = `${pendingCount()} of ${Object.keys(actionsById).length}`;
-  const b = $('.seg button[data-show="held"] b'); if(b) b.textContent = pendingCount();
+  const total = Object.keys(actionsById).length, held = pendingCount();
+  const approved = [...escalatedIds].filter(id => decisions[id]?.decision === 'approve').length;
+  const w = $('#waiting'); if(w) w.textContent = `${held} of ${total}`;
+  const seg = $('#board .seg'); if(!seg) return;
+  seg.querySelector('[data-show="held"] b').textContent = held;
+  seg.querySelector('[data-show="auto"] b').textContent = total - escalatedIds.size + approved;
 }
 async function decide(strip, choice){
   const id = strip.dataset.for, a = actionsById[id];
@@ -590,10 +599,10 @@ async function decide(strip, choice){
   strip.querySelector('.err')?.remove();
   try{
     const res = await withRun(() => fetch(`/runs/${runId}/decisions`, {method:'POST', headers:{'Content-Type':'application/json'},
-      body: JSON.stringify({action_id: id, decision: choice, note, operator: whoami()})}));
+      body: JSON.stringify({plan_id: planId, action_id: id, decision: choice, note, operator: whoami()})}));
     const data = await res.json();
     if(!res.ok){
-      strip.insertAdjacentHTML('beforeend', `<span class="err">${esc(data.detail || res.statusText)}</span>`);
+      strip.insertAdjacentHTML('beforeend', `<span class="err">${esc(detail(data.detail) || res.statusText)}</span>`);
       return;
     }
     decisions[id] = data.decision;
@@ -606,15 +615,30 @@ async function decide(strip, choice){
   }finally{ buttons.forEach(x => x.disabled = false); }
 }
 
+/* The status board: every action in the plan on the table, with the filter.
+   `fresh` marks actions a revision just added. Only one live board exists at
+   a time; the folded history keeps copies without ids or controls. */
+function board(plan, escalated, fresh){
+  const order = {evacuate_zone:0, open_shelter:1, stage_supplies:2, hold:3};
+  const acts = [...plan.actions].sort((a,b)=>(order[a.kind]-order[b.kind])||(a.priority-b.priority));
+  const total = plan.actions.length, held = pendingCount();
+  const committed = total - escalated.size + [...escalated].filter(id => decisions[id]?.decision === 'approve').length;
+  return `<section class="acts" id="board" data-show="all"><h2>What it wants to do</h2>
+      <div class="seg" role="group" aria-label="Show">
+        <button type="button" data-show="all" aria-pressed="true">All<b>${total}</b></button>
+        <button type="button" data-show="held" aria-pressed="false">Needs you<b>${held}</b></button>
+        <button type="button" data-show="auto" aria-pressed="false">Committed<b>${committed}</b></button>
+      </div>
+      ${acts.map(a=>actionRow(a, escalated, fresh?.has(a.action_id))).join('')}</section>`;
+}
+
 function renderRun(d){
   const o = d.output, m = o.simulation?.metrics || {};
   const escalated = new Set(o.escalations.map(e=>e.action_id));
-  const order = {evacuate_zone:0, open_shelter:1, stage_supplies:2, hold:3};
-  const acts = [...o.plan.actions].sort((a,b)=>(order[a.kind]-order[b.kind])||(a.priority-b.priority));
   const margin = m.capacity_margin || 0;
 
-  actionsById = o.plan.by_id ? o.plan.by_id() : Object.fromEntries(o.plan.actions.map(a => [a.action_id, a]));
-  escalatedIds = escalated;
+  actionsById = Object.fromEntries(o.plan.actions.map(a => [a.action_id, a]));
+  escalatedIds = escalated; planId = o.plan.plan_id;
   const held = pendingCount(), total = o.plan.actions.length;
   const when = $('#hour').selectedOptions[0]?.textContent || '';
   reveal($('#out'));
@@ -637,13 +661,7 @@ function renderRun(d){
     ${o.memory_recalled.length?`<section><h2>Carried over from earlier runs</h2>${o.memory_recalled.map(l=>`<p class="note">${esc(l)}</p>`).join('')}</section>`:''}
     ${o.unresolved_issues.length?`<section><h2>Your call</h2>${o.unresolved_issues.map(u=>`<p class="note warn">${esc(u)}</p>`).join('')}</section>`:''}
 
-    <section class="acts" data-show="all"><h2>What it wants to do</h2>
-      <div class="seg" role="group" aria-label="Show">
-        <button type="button" data-show="all" aria-pressed="true">All<b>${total}</b></button>
-        <button type="button" data-show="held" aria-pressed="false">Needs you<b>${held}</b></button>
-        <button type="button" data-show="auto" aria-pressed="false">Committed<b>${total-held}</b></button>
-      </div>
-      ${acts.map(a=>actionRow(a, escalated)).join('')}</section>
+    ${board(o.plan, escalated)}
     <section><h2>How it got there</h2><div class="trace" id="trace">loading</div></section>`;
 }
 
@@ -704,7 +722,7 @@ function renderEvent(d){
   const escalated = new Set(d.escalations.map(e=>e.action_id));
   if(d.revised_plan){
     actionsById = Object.fromEntries(d.revised_plan.actions.map(a => [a.action_id, a]));
-    escalatedIds = escalated;
+    escalatedIds = escalated; planId = d.revised_plan.plan_id;
   }
   const county = t => ({'071':'Lee','015':'Charlotte','115':'Sarasota','103':'Pinellas','057':'Hillsborough'}[t.split('-')[1]] || t);
   const footprint = p => { const c={}; (p?.actions||[]).filter(a=>a.kind==='evacuate_zone')
@@ -714,7 +732,7 @@ function renderEvent(d){
   /* The plan on screen was made against a world that no longer exists.
      Keep it, dimmed and folded, under the revision that replaced it. */
   const out = $('#out');
-  out.querySelector('#trace')?.removeAttribute('id');
+  out.querySelectorAll('[id]').forEach(el => el.removeAttribute('id'));
   const priorTitle = out.querySelector('h2')?.textContent || 'the earlier plan';
   const prior = `<details class="prior"><summary>Before this change: ${esc(priorTitle)}</summary><div>${out.innerHTML}</div></details>`;
   reveal(out);
@@ -731,8 +749,8 @@ function renderEvent(d){
       <div><h3>Was evacuating</h3><p>${esc(footprint(d.previous_plan))}</p></div>
       <div class="after"><h3>Now evacuating</h3><p>${esc(footprint(d.revised_plan))}</p></div>
     </div>
-    ${dd.added.length?`<section><h2>Newly ordered</h2>${dd.added.map(a=>actionRow(a, escalated)).join('')}</section>`:''}
     ${dd.removed.length?`<section><h2>Stood down</h2><p class="note">${dd.removed.map(esc).join(', ')}</p></section>`:''}
+    ${d.revised_plan ? board(d.revised_plan, escalated, new Set(dd.added.map(a=>a.action_id))) : ''}
     <section><h2>How it got there</h2><div class="trace" id="trace">loading</div></section>
     ${prior}`;
 }

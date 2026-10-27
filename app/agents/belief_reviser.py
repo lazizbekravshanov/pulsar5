@@ -44,14 +44,14 @@ class BeliefReviser(Agent):
             raise ValueError(f"unsupported event type {event.type!r}")
 
         before_revision = self.world.revision
-        deltas = handler(event.payload)
+        # A belief re-asserted with a newer as_of and the same value was
+        # confirmed, not changed; only a changed value can unsettle a decision.
+        deltas = [d for d in handler(event.payload) if d.field_name == "value"]
         changed_ids = sorted({d.fact_id for d in deltas})
 
         dependents = self.world.depends_on_any(changed_ids)
         dependent_ids = [d.decision_id for d in dependents]
-        preserved = [
-            d.decision_id for d in self.world.decisions() if d.decision_id not in dependent_ids and d.status != "invalidated"
-        ]
+        preserved = [d.decision_id for d in self.world.live_decisions() if d.decision_id not in dependent_ids]
 
         invalidated = self.world.invalidate(
             dependent_ids, reason=f"{event.type}: depended on {', '.join(changed_ids[:4])}"
@@ -143,25 +143,9 @@ class BeliefReviser(Agent):
         return deltas
 
     def _reassess_zone_exposure(self, cone: Any, provenance: Provenance) -> list[BeliefDelta]:
-        from app.sim.geo import point_in_polygon
+        from app.sim.exposure import derive_zone_exposure
 
-        points = [(float(p[0]), float(p[1])) for p in cone if isinstance(p, (list, tuple)) and len(p) >= 2]
-        deltas: list[BeliefDelta] = []
-        for zone in self.world.entities("zone"):
-            lat, lon = zone.get("lat"), zone.get("lon")
-            if lat is None or lon is None or not points:
-                continue
-            exposed = point_in_polygon((float(lat), float(lon)), points)
-            _, item_deltas = self.world.assert_belief(
-                f"zone:{zone['entity_id']}:in_cone",
-                f"zone:{zone['entity_id']}",
-                "in_cone",
-                exposed,
-                provenance,
-                written_by=self.name,
-            )
-            deltas.extend(item_deltas)
-        return deltas
+        return derive_zone_exposure(self.world, cone, provenance, written_by=self.name)
 
     def _shelter_capacity(self, payload: dict[str, Any]) -> list[BeliefDelta]:
         shelter_id = str(payload.get("shelter_id"))

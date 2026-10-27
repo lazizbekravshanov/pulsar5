@@ -89,7 +89,19 @@ class Analyst(Agent):
                 break
 
         self.ctx.tracer.handoff(self.name, "Planner", f"{len(fact_ids)} facts from {len(gathered)} queries")
+        fact_ids.extend(self._derive_exposure())
         return {"queries_run": gathered, "fact_ids": fact_ids, "rounds": rounds}
+
+    def _derive_exposure(self) -> list[str]:
+        """`zone:<id>:in_cone` for every zone, from the cone just gathered, so an
+        evacuation can depend on its zone's membership rather than the polygon."""
+        from app.sim.exposure import derive_zone_exposure
+
+        cone = self.world.belief("hazard:cone_polygon")
+        if cone is None:
+            return []
+        deltas = derive_zone_exposure(self.world, cone.value, cone.provenance, written_by=self.name)
+        return sorted({d.fact_id for d in deltas})
 
     # ---------------------------------------------------------------- choosing
 

@@ -67,3 +67,55 @@ def test_store_survives_a_corrupt_file(tmp_path):
     memory.remember("a", "b", tags=["t"])
     memory.flush()
     assert HMem(store).digest()["total"] == 1
+
+
+def test_flush_merges_what_other_processes_wrote(tmp_path):
+    """Two runs hold their own HMem on the same store; neither may erase the other."""
+    store = tmp_path / "store.json"
+    first, second = HMem(store), HMem(store)
+
+    first.remember("operator:evacuate_zone:Z-1", "declined", tags=["ian_2022"], run_id="run-1")
+    first.flush()
+    second.remember("operator:evacuate_zone:Z-2", "approved", tags=["ian_2022"], run_id="run-2")
+    second.flush()
+
+    statements = sorted(i.statement for i in HMem(store).all_items())
+    assert statements == ["approved", "declined"]
+
+
+def test_forget_survives_a_merge_on_flush(tmp_path):
+    store = tmp_path / "store.json"
+    memory = HMem(store)
+    memory.remember("operator:evacuate_zone:Z-1", "declined", tags=["ian_2022"], run_id="run-1")
+    memory.flush()
+
+    memory.forget("operator:evacuate_zone:Z-1", run_id="run-1")
+    memory.remember("operator:evacuate_zone:Z-1", "approved after all", tags=["ian_2022"], run_id="run-1")
+    memory.flush()
+
+    assert [i.statement for i in HMem(store).all_items()] == ["approved after all"]
+
+
+def test_consolidate_counts_runs_not_episodes(tmp_path):
+    memory = HMem(tmp_path / "store.json")
+    memory.remember("shelter:S-14", "filled early", tags=["ian_2022"], run_id="run-1")
+    memory.remember("shelter:S-14", "filled early, said twice", tags=["ian_2022"], run_id="run-1")
+
+    assert memory.consolidate() == [], "one run repeating itself is not a pattern"
+
+    memory.remember("shelter:S-14", "filled early again", tags=["ian_2022"], run_id="run-2")
+    promoted = memory.consolidate()
+    assert len(promoted) == 1
+    assert promoted[0].statement.startswith("Seen in 2 runs:")
+
+
+def test_recall_can_require_or_exclude_a_tag(tmp_path):
+    memory = HMem(tmp_path / "store.json")
+    memory.remember("shelter:S-14", "fills early", tags=["ian_2022", "lee"], confidence=0.75)
+    memory.remember("operator:evacuate_zone:Z-1", "operator declined", tags=["ian_2022", "lee", "operator"], confidence=0.8)
+
+    plain = memory.recall(["ian_2022", "lee"], exclude_tags=["operator"])
+    operator = memory.recall(["ian_2022", "lee"], require_tags=["operator"])
+
+    assert [i.subject for i in plain] == ["shelter:S-14"]
+    assert [i.subject for i in operator] == ["operator:evacuate_zone:Z-1"]

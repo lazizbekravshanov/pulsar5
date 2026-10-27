@@ -114,12 +114,16 @@ class Escalation(BaseModel):
 
 
 class OperatorDecisionRequest(BaseModel):
-    """A human answering an escalation. Only held actions can be decided."""
+    """A human answering an escalation. Only held actions can be decided, and
+    the request names the plan it read, so a decision made against a plan
+    that has since been revised is refused instead of landing on whatever
+    action now carries that number."""
 
+    plan_id: str
     action_id: str
     decision: Literal["approve", "decline"]
-    note: str = ""
-    operator: str = "operator"
+    note: str = Field("", max_length=200)
+    operator: str = Field("operator", max_length=40)
 
 
 class OperatorDecision(BaseModel):
