@@ -110,6 +110,37 @@ class Escalation(BaseModel):
     requires: Literal["human_approval"] = "human_approval"
 
 
+# ---------------------------------------------------------------- operator
+
+
+class OperatorDecisionRequest(BaseModel):
+    """A human answering an escalation. Only held actions can be decided."""
+
+    action_id: str
+    decision: Literal["approve", "decline"]
+    note: str = ""
+    operator: str = "operator"
+
+
+class OperatorDecision(BaseModel):
+    action_id: str
+    # The action's identity, because a revision renumbers actions and the
+    # decision has to follow the action, not the number.
+    kind: str = ""
+    target: str = ""
+    decision: Literal["approve", "decline"]
+    note: str = ""
+    operator: str = "operator"
+    decided_at: str = Field(default_factory=utc_now_iso)
+
+
+class DecisionResponse(BaseModel):
+    run_id: str
+    decision: OperatorDecision | None = None
+    decisions: list[OperatorDecision] = Field(default_factory=list)
+    pending: int = 0
+
+
 # ---------------------------------------------------------------- output
 
 

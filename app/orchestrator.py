@@ -36,9 +36,12 @@ from app.engines.markovian.engine import MarkovianRunner
 from app.engines.world_model.engine import WorldModel
 from app.schemas import (
     Critique,
+    DecisionResponse,
     Escalation,
     Event,
     EventResponse,
+    OperatorDecision,
+    OperatorDecisionRequest,
     Plan,
     RunOutput,
     RunRequest,
@@ -65,8 +68,11 @@ class RunState:
     replay_hour: str
     region: list[str] = field(default_factory=list)
     goal: str = ""
+    scenario: str = ""
     escalations: list[Escalation] = field(default_factory=list)
     lessons: list[str] = field(default_factory=list)
+    # What a human has said about the held actions, keyed by action_id.
+    decisions: dict[str, OperatorDecision] = field(default_factory=dict)
 
 
 RUNS: dict[str, RunState] = {}
@@ -161,6 +167,7 @@ class Orchestrator:
                 replay_hour=request.input.replay_hour,
                 region=list(request.input.region),
                 goal=request.input.goal,
+                scenario=request.input.scenario,
                 escalations=escalations,
                 lessons=lessons,
             )
@@ -297,6 +304,9 @@ class Orchestrator:
 
             state.plan = revised
             state.escalations = escalations
+            state.decisions = self._carry_decisions(state.decisions, revision["invalidated_decisions"], revised, escalations)
+            for decision in state.decisions.values():
+                self._apply_decision_to_world(state, decision)
 
             state.tracer.log(
                 agent_name="Orchestrator",
@@ -325,6 +335,118 @@ class Orchestrator:
         finally:
             zetaris.close()
             nightshift.close()
+
+    # ----------------------------------------------------------------- operator
+
+    def decide(self, run_id: str, request: OperatorDecisionRequest) -> DecisionResponse:
+        """Record a human's answer to an escalation.
+
+        Only a held action can be decided: approving something that already
+        committed on its own, or declining it, would be a different feature
+        (a veto) and is refused rather than silently accepted.
+        """
+        state = RUNS.get(run_id)
+        if state is None:
+            raise KeyError(f"unknown run_id {run_id!r}; POST /run first")
+        action = state.plan.by_id().get(request.action_id)
+        if action is None:
+            raise KeyError(f"unknown action_id {request.action_id!r} in run {run_id!r}")
+        if request.action_id not in {e.action_id for e in state.escalations}:
+            raise ValueError(
+                f"{request.action_id} was not held for a human; only escalated actions can be decided"
+            )
+
+        decision = OperatorDecision(
+            action_id=request.action_id,
+            kind=action.kind,
+            target=action.target,
+            decision=request.decision,
+            note=request.note.strip(),
+            operator=request.operator.strip() or "operator",
+        )
+        state.decisions[request.action_id] = decision
+        self._apply_decision_to_world(state, decision)
+
+        verb = "approved" if decision.decision == "approve" else "declined"
+        state.tracer.log(
+            agent_name="Operator",
+            action=f"{decision.decision}_action",
+            input_summary=decision.note,
+            output_summary=f"{action.action_id} {action.kind} {action.target} {verb} by {decision.operator}",
+            confidence=action.confidence,
+            extra={"action_id": action.action_id, "decision": decision.decision, "operator": decision.operator},
+        )
+
+        # The operator's call is an episode the next run can recall for the
+        # same region, the same way a shelter filling early is.
+        entity = state.world.entity(action.target) or {}
+        county = str(entity.get("county") or "")
+        tags = [state.scenario, *[c.lower() for c in state.region], county.lower(), "operator"]
+        statement = f"Operator {verb} {action.kind} {action.target} at {state.replay_hour}"
+        if decision.note:
+            statement += f": {decision.note}"
+        state.memory.remember(
+            f"operator:{action.kind}:{action.target}",
+            statement,
+            level=LEVEL_EPISODE,
+            tags=tags,
+            confidence=0.8,
+            run_id=run_id,
+            evidence=action.evidence_ids,
+        )
+        state.memory.flush()
+        state.tracer.engine_op("hmem", "write_memory", f"operator decision on {action.action_id} remembered")
+
+        return self._decision_response(state, decision)
+
+    def list_decisions(self, run_id: str) -> DecisionResponse:
+        state = RUNS.get(run_id)
+        if state is None:
+            raise KeyError(f"unknown run_id {run_id!r}; POST /run first")
+        return self._decision_response(state, None)
+
+    @staticmethod
+    def _carry_decisions(
+        decisions: dict[str, OperatorDecision],
+        invalidated: list[str],
+        revised: Plan,
+        escalations: list[Escalation],
+    ) -> dict[str, OperatorDecision]:
+        """Move operator decisions across a revision.
+
+        The Planner numbers a revised plan afresh, so an approval is matched by
+        what it was for (kind and target), not by action_id. It is dropped when
+        the Belief Reviser invalidated the decision it answered, when the
+        revised plan no longer contains that action, or when the action is no
+        longer held for a human and there is nothing left to answer.
+        """
+        gone = set(invalidated)
+        new_id = {(a.kind, a.target): a.action_id for a in revised.actions}
+        held = {e.action_id for e in escalations}
+        carried: dict[str, OperatorDecision] = {}
+        for old_id, decision in decisions.items():
+            if old_id in gone:
+                continue
+            target_id = new_id.get((decision.kind, decision.target))
+            if target_id is None or target_id not in held:
+                continue
+            carried[target_id] = decision.model_copy(update={"action_id": target_id})
+        return carried
+
+    def _apply_decision_to_world(self, state: RunState, decision: OperatorDecision) -> None:
+        if decision.decision == "approve":
+            state.world.set_decision_status(decision.action_id, "committed")
+        else:
+            state.world.invalidate([decision.action_id], f"declined by {decision.operator}")
+
+    def _decision_response(self, state: RunState, decision: OperatorDecision | None) -> DecisionResponse:
+        pending = sum(1 for e in state.escalations if e.action_id not in state.decisions)
+        return DecisionResponse(
+            run_id=state.run_id,
+            decision=decision,
+            decisions=list(state.decisions.values()),
+            pending=pending,
+        )
 
     # ----------------------------------------------------------------- helpers
 

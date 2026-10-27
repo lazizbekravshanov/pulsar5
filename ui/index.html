@@ -156,6 +156,28 @@
   .act .m{font:400 12px/1 var(--mono);color:var(--faint)}
   .act .m b{color:var(--quiet);font-weight:500}
   .act .m.cite{color:var(--cite);cursor:help}
+
+  /* The operator's answer to a held row. Green stripe once approved, red
+     once declined: the amber "needs you" is gone because it no longer does. */
+  .act.decided.approve{border-left-color:var(--commit)}
+  .act.decided.approve .state{color:var(--commit)}
+  .act.decided.decline{border-left-color:var(--alarm)}
+  .act.decided.decline .state{color:var(--alarm)}
+  .act.decided.decline .detail{color:var(--quiet)}
+  .decide{display:flex;gap:6px;margin-top:9px;align-items:center}
+  .decide input{flex:1;min-width:0;padding:5px 8px;font-size:12.5px}
+  .decide button{width:auto;margin:0;padding:5px 10px;font-size:12.5px;font-weight:600;white-space:nowrap}
+  .decide button[data-decide="approve"]{background:var(--commit);color:#06261a}
+  .decide button[data-decide="approve"]:hover{background:#63c497}
+  .decide button[data-decide="decline"]{background:transparent;color:var(--alarm);border:1px solid var(--alarm)}
+  .decide button[data-decide="decline"]:hover{background:rgba(217,84,77,.12)}
+  .decide.again{display:none}
+  .act.changing .decide.again{display:flex}
+  .verdict{display:flex;justify-content:space-between;gap:10px;align-items:baseline;margin-top:8px;font-size:12.5px;color:var(--quiet)}
+  .verdict q{quotes:"\201C" "\201D";color:#c4d0da}
+  button.link{width:auto;margin:0;padding:0;background:none;color:var(--quiet);font-size:12px;font-weight:500;text-decoration:underline}
+  button.link:hover{background:none;color:var(--ink)}
+  .decide .err{font-size:12px;color:#e8cfa8}
   /* Rows with a place on the map are live: hover shows where, click goes there. */
   .act[data-target]{cursor:pointer;transition:background .15s}
   .act[data-target]:hover{background:var(--board)}
@@ -173,6 +195,7 @@
   .seg b{font:500 11.5px/1 var(--mono);margin-left:6px;color:var(--faint)}
   .seg button[aria-pressed="true"] b{color:var(--quiet)}
   .acts[data-show="held"] .act:not(.held){display:none}
+  .acts[data-show="held"] .act.decided{display:none}
   .acts[data-show="auto"] .act.held{display:none}
 
   /* After a change of mind the earlier plan is history, kept but dimmed. */
@@ -189,6 +212,7 @@
   details.prior[open]>summary::before{transform:rotate(90deg)}
   details.prior>summary:hover{color:var(--ink)}
   details.prior>div{margin-top:14px;opacity:.72}
+  details.prior .decide,details.prior .verdict button{display:none}
 
   /* ---------------------------------------------------------- diff */
   .diff{display:grid;grid-template-columns:1fr 1fr;gap:0;border:1px solid var(--rule);border-radius:6px;overflow:hidden;margin:12px 0 18px}
@@ -354,6 +378,9 @@ legend.onAdd = () => {
 legend.addTo(map);
 
 let runId = null, world = null, sampleMode = false;
+/* The plan on screen, by action id, and what the operator has said about the
+   held ones. Both are rebuilt on every plan and every revision. */
+let actionsById = {}, escalatedIds = new Set(), decisions = {};
 /* The request that built the current plan, so an event can rebuild the
    world it was planned against. Cleared and refilled on every Plan. */
 let planRequest = null;
@@ -389,7 +416,7 @@ $('#go').onclick = async () => {
     goal:'Plan shelter openings, supply staging and evacuation priority for the next 24 hours.',
     constraints:{supply_trucks:+$('#trucks').value, staging_sites_max:+$('#staging').value}},
     options:{max_iterations:3, replay_steps:+$('#steps').value}};
-  replayed.clear();
+  replayed.clear(); decisions = {};
   try{
     const res = await fetch('/run', {method:'POST', headers:{'Content-Type':'application/json'},
       body: JSON.stringify(planRequest)});
@@ -445,6 +472,8 @@ document.querySelectorAll('[data-ev]').forEach(b => b.onclick = async () => {
     replayed.add(key);
     b.classList.add('applied');
     world = await (await fetch(`/runs/${runId}/world`)).json();
+    const carried = await (await fetch(`/runs/${runId}/decisions`)).json();
+    decisions = Object.fromEntries(carried.decisions.map(d => [d.action_id, d]));
     renderEvent(data);
     if(data.revised_plan) draw(data.revised_plan);
     loadTrace();
@@ -463,15 +492,30 @@ function reveal(el){
   });
 }
 
+function decideStrip(a, again){
+  return `<div class="decide ${again?'again':''}" data-for="${esc(a.action_id)}">
+    <input type="text" maxlength="200" placeholder="Note for the record, optional" aria-label="Note">
+    <button type="button" data-decide="approve">Approve</button>
+    <button type="button" data-decide="decline">Decline</button>
+  </div>`;
+}
+function verdictLine(d){
+  const when = (d.decided_at||'').slice(11,16);
+  return `<div class="verdict"><span>${d.decision==='approve'?'Approved':'Declined'} by ${esc(d.operator)}${when?` at ${when}Z`:''}${d.note?`, <q>${esc(d.note)}</q>`:''}</span>
+    <button type="button" class="link" data-change="${esc(d.action_id)}">Change</button></div>`;
+}
+
 function actionRow(a, escalated){
   const held = escalated.has(a.action_id);
+  const d = held ? decisions[a.action_id] : null;
   const cites = (a.evidence_ids||[]).length;
   const verb = {evacuate_zone:'Evacuate', open_shelter:'Open', stage_supplies:'Stage at', hold:'Hold'}[a.kind] || a.kind;
-  return `<div class="act ${held?'held':''}" data-target="${esc(a.target)}">
+  const state = !held ? 'Committed' : d ? (d.decision==='approve' ? 'Approved' : 'Declined') : 'Needs your approval';
+  return `<div class="act ${held?'held':''} ${d?'decided '+d.decision:''}" data-target="${esc(a.target)}" data-action="${esc(a.action_id)}">
     <div class="top">
       <span class="kind">${esc(verb)}</span>
       <span class="tgt">${esc(a.target)}</span>
-      <span class="state">${held?'Needs your approval':'Committed'}</span>
+      <span class="state">${state}</span>
     </div>
     <p class="detail">${esc(a.detail)}</p>
     <div class="meta">
@@ -479,7 +523,40 @@ function actionRow(a, escalated){
       <span class="m"><b>confidence</b> ${a.confidence.toFixed(2)}</span>
       <span class="m">${a.reversible?'reversible':'cannot be undone'}</span>
       <span class="m cite" title="${esc((a.evidence_ids||[]).join('\n'))}">${cites} facts cited</span>
-    </div></div>`;
+    </div>
+    ${held ? (d ? verdictLine(d) + decideStrip(a, true) : decideStrip(a, false)) : ''}</div>`;
+}
+
+/* ---------------------------------------------------------- deciding */
+function pendingCount(){
+  return [...escalatedIds].filter(id => !decisions[id]).length;
+}
+function refreshCounts(){
+  const w = $('#waiting'); if(w) w.textContent = `${pendingCount()} of ${Object.keys(actionsById).length}`;
+  const b = $('.seg button[data-show="held"] b'); if(b) b.textContent = pendingCount();
+}
+async function decide(strip, choice){
+  const id = strip.dataset.for, a = actionsById[id];
+  const note = strip.querySelector('input').value.trim();
+  const buttons = strip.querySelectorAll('button');
+  buttons.forEach(x => x.disabled = true);
+  strip.querySelector('.err')?.remove();
+  try{
+    const res = await fetch(`/runs/${runId}/decisions`, {method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({action_id: id, decision: choice, note})});
+    const data = await res.json();
+    if(!res.ok){
+      strip.insertAdjacentHTML('beforeend', `<span class="err">${esc(data.detail || res.statusText)}</span>`);
+      return;
+    }
+    decisions[id] = data.decision;
+    const row = strip.closest('.act');
+    row.outerHTML = actionRow(a, escalatedIds);
+    refreshCounts();
+    loadTrace();
+  }catch(e){
+    strip.insertAdjacentHTML('beforeend', `<span class="err">${esc(e.message)}</span>`);
+  }finally{ buttons.forEach(x => x.disabled = false); }
 }
 
 function renderRun(d){
@@ -489,7 +566,9 @@ function renderRun(d){
   const acts = [...o.plan.actions].sort((a,b)=>(order[a.kind]-order[b.kind])||(a.priority-b.priority));
   const margin = m.capacity_margin || 0;
 
-  const held = escalated.size, total = o.plan.actions.length;
+  actionsById = o.plan.by_id ? o.plan.by_id() : Object.fromEntries(o.plan.actions.map(a => [a.action_id, a]));
+  escalatedIds = escalated;
+  const held = pendingCount(), total = o.plan.actions.length;
   const when = $('#hour').selectedOptions[0]?.textContent || '';
   reveal($('#out'));
   $('#out').innerHTML = `
@@ -500,7 +579,7 @@ function renderRun(d){
       <div class="stat"><span>Spaces in the shelters being opened</span><b>${n(Math.round(m.open_shelter_capacity))}</b></div>
       <div class="stat"><span>Margin</span><b class="${margin>=0?'good':'bad'}">${margin>=0?'+':''}${n(Math.round(margin))}</b></div>
       <div class="stat"><span>Zones in the cone that are covered</span><b>${((m.coverage_rate||0)*100).toFixed(0)}%</b></div>
-      <div class="stat"><span>Waiting on you</span><b>${o.escalations.length} of ${o.plan.actions.length}</b></div>
+      <div class="stat"><span>Waiting on you</span><b id="waiting">${held} of ${total}</b></div>
       <div class="stat"><span>Critic</span><b>${o.critique.accepted?'accepted':'refused'} at ${o.critique.confidence.toFixed(2)}</b></div>
       <div class="stat"><span>Revisions before it settled</span><b>${d.iterations}</b></div>
       <div class="stat"><span>Queries through Zetaris</span><b>${d.zetaris_queries}</b></div>
@@ -532,6 +611,16 @@ $('#out').addEventListener('click', e => {
     sec.querySelectorAll('.seg button').forEach(b => b.setAttribute('aria-pressed', b === seg));
     return;
   }
+  const dec = e.target.closest('[data-decide]');
+  if(dec){ decide(dec.closest('.decide'), dec.dataset.decide); return; }
+  const change = e.target.closest('[data-change]');
+  if(change){
+    const row = change.closest('.act');
+    row.classList.toggle('changing');
+    if(row.classList.contains('changing')) row.querySelector('.decide.again input')?.focus();
+    return;
+  }
+  if(e.target.closest('.decide, .verdict')) return;
   const row = e.target.closest('.act[data-target]');
   if(row) locate(row.dataset.target);
 });
@@ -566,6 +655,10 @@ function focusRow(id){
 function renderEvent(d){
   const dd = d.diff || {added:[],removed:[],changed:[]};
   const escalated = new Set(d.escalations.map(e=>e.action_id));
+  if(d.revised_plan){
+    actionsById = Object.fromEntries(d.revised_plan.actions.map(a => [a.action_id, a]));
+    escalatedIds = escalated;
+  }
   const county = t => ({'071':'Lee','015':'Charlotte','115':'Sarasota','103':'Pinellas','057':'Hillsborough'}[t.split('-')[1]] || t);
   const footprint = p => { const c={}; (p?.actions||[]).filter(a=>a.kind==='evacuate_zone')
       .forEach(a=>{const k=county(a.target); c[k]=(c[k]||0)+1;});
@@ -584,6 +677,8 @@ function renderEvent(d){
       <div class="stat"><span>Beliefs that changed</span><b style="color:var(--cite)">${d.changed_beliefs.length}</b></div>
       <div class="stat"><span>Decisions invalidated</span><b class="bad">${d.invalidated_decisions.length}</b></div>
       <div class="stat"><span>Decisions left standing</span><b class="good">${d.preserved_decisions.length}</b></div>
+      ${Object.keys(decisions).length?`<div class="stat"><span>Your decisions carried over</span><b>${Object.keys(decisions).length}</b></div>`:''}
+      <div class="stat"><span>Waiting on you</span><b id="waiting">${pendingCount()} of ${Object.keys(actionsById).length}</b></div>
     </div>
     <div class="diff">
       <div><h3>Was evacuating</h3><p>${esc(footprint(d.previous_plan))}</p></div>

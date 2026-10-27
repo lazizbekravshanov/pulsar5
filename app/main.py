@@ -13,7 +13,14 @@ from app.adapters.nightshift import NightshiftClient
 from app.adapters.zetaris import ZetarisClient
 from app.config import REPO_ROOT, load_settings
 from app.orchestrator import RUNS, Orchestrator
-from app.schemas import EventRequest, EventResponse, RunRequest, RunResponse
+from app.schemas import (
+    DecisionResponse,
+    EventRequest,
+    EventResponse,
+    OperatorDecisionRequest,
+    RunRequest,
+    RunResponse,
+)
 
 app = FastAPI(
     title="Pulsar 5",
@@ -24,6 +31,11 @@ app = FastAPI(
     ),
 )
 _orchestrator = Orchestrator()
+
+
+def _message(exc: BaseException) -> str:
+    """KeyError repr-quotes its message; every other exception does not."""
+    return str(exc.args[0]) if exc.args else str(exc)
 
 
 @app.get("/health")
@@ -63,9 +75,9 @@ def events(request: EventRequest) -> EventResponse:
     try:
         return _orchestrator.apply_event(request.run_id, request.event)
     except KeyError as exc:
-        raise HTTPException(status_code=404, detail=str(exc)) from exc
+        raise HTTPException(status_code=404, detail=_message(exc)) from exc
     except ValueError as exc:
-        raise HTTPException(status_code=422, detail=str(exc)) from exc
+        raise HTTPException(status_code=422, detail=_message(exc)) from exc
 
 
 @app.get("/runs/{run_id}")
@@ -78,6 +90,7 @@ def get_run(run_id: str) -> dict:
         "replay_hour": state.replay_hour,
         "plan": state.plan.model_dump(mode="json"),
         "escalations": [e.model_dump(mode="json") for e in state.escalations],
+        "decisions": [d.model_dump(mode="json") for d in state.decisions.values()],
         "memory_recalled": state.lessons,
         "world": state.world.digest(),
         "trace_id": state.tracer.trace_id,
@@ -94,6 +107,27 @@ def get_trace(run_id: str) -> str:
     if not path.exists():
         raise HTTPException(status_code=404, detail="trace file not written yet")
     return path.read_text(encoding="utf-8")
+
+
+@app.post("/runs/{run_id}/decisions", response_model=DecisionResponse)
+def decide(run_id: str, request: OperatorDecisionRequest) -> DecisionResponse:
+    """A human answers an escalation. Approving commits the decision in the
+    World Model; declining invalidates it. Either way it goes on the trace and
+    into H-MEM, so the next run can recall what an operator would not sign."""
+    try:
+        return _orchestrator.decide(run_id, request)
+    except KeyError as exc:
+        raise HTTPException(status_code=404, detail=_message(exc)) from exc
+    except ValueError as exc:
+        raise HTTPException(status_code=409, detail=_message(exc)) from exc
+
+
+@app.get("/runs/{run_id}/decisions", response_model=DecisionResponse)
+def list_decisions(run_id: str) -> DecisionResponse:
+    try:
+        return _orchestrator.list_decisions(run_id)
+    except KeyError as exc:
+        raise HTTPException(status_code=404, detail=_message(exc)) from exc
 
 
 @app.get("/runs/{run_id}/world")

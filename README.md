@@ -129,7 +129,7 @@ Three design decisions worth pointing at, because they are where the reasoning l
 | Engine | Job in Pulsar 5 | Proof | File |
 |---|---|---|---|
 | **World Model** | The shared state every agent reads and writes: beliefs with provenance, decisions with dependencies. Concurrent writes merge per key; a late write with an older `as_of` is recorded as a conflict rather than clobbering fresher data | 8 threads × 60 writes, zero lost ([`tests/test_world_model.py`](tests/test_world_model.py)) | [`app/engines/world_model/engine.py`](app/engines/world_model/engine.py) |
-| **H-MEM** | Three-level memory across runs (L0 episodes → L1 lessons → L2 standing policy). A recalled lesson writes a `memory_derate` onto a shelter, so run 2 plans against smaller usable capacity than run 1 | A fresh process recalls run 1's lesson and the capacity numbers change ([`tests/test_hmem.py`](tests/test_hmem.py), [`tests/test_integration.py`](tests/test_integration.py)) | [`app/engines/hmem/engine.py`](app/engines/hmem/engine.py) |
+| **H-MEM** | Three-level memory across runs (L0 episodes → L1 lessons → L2 standing policy). A recalled lesson writes a `memory_derate` onto a shelter, so run 2 plans against smaller usable capacity than run 1. An operator's approve or decline on a held action is remembered the same way and recalled on the next run for the same counties | A fresh process recalls run 1's lesson and the capacity numbers change ([`tests/test_hmem.py`](tests/test_hmem.py), [`tests/test_integration.py`](tests/test_integration.py)) | [`app/engines/hmem/engine.py`](app/engines/hmem/engine.py) |
 | **Markovian** | The hourly replay. Each hour is one bounded step with a compressed carryover, and H-MEM is injected once at step 1 per the COMBINE contract | **24 steps, context flat at 448–452 chars** while each step returns 20 KB ([`tests/test_markovian.py`](tests/test_markovian.py)) | [`app/engines/markovian/engine.py`](app/engines/markovian/engine.py) |
 
 The H-MEM derate is deliberately wired into `app/sim/capacity.py`, shared by Planner **and** Simulator. If they disagreed, a lesson would be decoration: the Planner would treat a shelter as smaller while the Simulator kept checking against nominal headroom.
@@ -213,7 +213,9 @@ Full report: [`output_examples/eval_report.json`](output_examples/eval_report.js
 |---|---|
 | `POST /run` | Plan one replay hour, or an N-hour Markovian replay |
 | `POST /events` | Inject `advisory_update`, `shelter_capacity` or `road_closure`; returns changed beliefs, invalidated vs preserved decisions, the revised plan and a diff |
-| `GET /runs/{id}` | Plan, escalations, recalled memory, world digest |
+| `POST /runs/{id}/decisions` | An operator approves or declines a held action (`{"action_id", "decision": "approve" or "decline", "note"}`); recorded in the World Model, the trace and H-MEM; only escalated actions can be decided |
+| `GET /runs/{id}/decisions` | The operator's decisions on the current plan and how many held actions are still pending |
+| `GET /runs/{id}` | Plan, escalations, operator decisions, recalled memory, world digest |
 | `GET /runs/{id}/trace` | The JSONL trace |
 | `GET /runs/{id}/world` | Full World Model snapshot: beliefs with provenance, decision graph, conflicts |
 | `GET /health` | Zetaris and Nightshift reachability, pinned lane models |
