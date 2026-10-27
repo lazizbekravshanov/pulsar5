@@ -58,46 +58,43 @@ Reached only through Nightshift, never called directly. The NVIDIA API key lives
 
 ---
 
-## 2. Demo video — script and shot list
+## 2. Demo video
 
-**Target 3:00. Hard limits 1:00–4:00.** Remus asks for four things on screen: the main workflow, Zetaris being queried, a Meterless Engine at work, and one real request through Nightshift.
+**Rendered: `~/pet/videos/pulsar5-demo/renders/pulsar5-demo.mp4`, 1920x1080, 3:24, narrated.** Inside the 1:00 to 4:00 window.
 
-Record at 1500×950 or wider so the three-column UI does not collapse to one column.
+It is an animated walkthrough built with HyperFrames from the approved script in [VIDEO-SCRIPT.md](VIDEO-SCRIPT.md), not a screen recording. Nine scenes: the problem with the NHC figures, the curl call, the plan on the real console, the Planner/Simulator/Critic loop, Zetaris, Nightshift, the change of mind on the real console, the three engines plus the scoreboard, and the Lee County close. The three short inserts (title card, architecture, stat reveal) are cut in.
 
-### Before you hit record
+What a judge should know about how it was made, so nothing on screen overclaims:
 
-```bash
-cd ~/pet/pulsar5
-rm -f data/hmem/store.json          # so "recalled from earlier runs" starts empty
-./.venv/bin/python run.py           # serves on :8000
-```
+- **The console frames are real.** Captured at 1920x1080 from the public deployment, pulsar5-nine.vercel.app, by driving the actual page. That deployment runs SAMPLE_MODE, so its header reads "Zetaris from cache / Nightshift recorded" and the plan panel says "Models that answered: none, fell back". The narration does not claim Nemotron over those frames.
+- **The Zetaris and Nightshift trace lines are from a real live run**, `logs/trace-ui-2022-09-26T12_00Z-5c-1793069641774.jsonl`: seven queries with `data_source=zetaris`, and the three lanes served by `nvidia/nemotron-3.5-lightning-30b-a3b`, `nvidia/nemotron-3-ultra-550b-a55b` and `nvidia/nemotron-3.5-bolt-e4b` with `status=success` and no fallback.
+- **The loop numbers** (14,184 vs 5,441, Critic 0.56 then 0.78, 11 of 29 held) are from run `ian-landfall-minus-48h`, the same run the deck's loop slide cites.
+- **The narration is a synthesized voice** (macOS, Samantha). No teammate's voice was recorded.
+- Every impact figure is sourced in [IMPACT-DATA.md](IMPACT-DATA.md).
 
-Open http://localhost:8000 and a terminal side by side.
+Regenerate after any change with `cd ~/pet/videos/pulsar5-demo && python3 narrate.py && python3 build.py && npm run check && npx hyperframes render . -o renders/pulsar5-demo.mp4`.
 
-### Shot list
+### Project summary, for the form
 
-| # | Time | On screen | Say |
-|---|---|---|---|
-| 1 | 0:00–0:20 | Slide 6 (*The forecast was not wrong*) | "Hurricane Ian killed 156 people and cost $112.9 billion. Storm surge killed 41 — and 36 of those were in one county. But the National Hurricane Center's own report says the cone contained the landfall location for every advisory cycle. The data was there the whole time. The plans built on it went stale." |
-| 2 | 0:20–0:35 | Terminal: `curl -X POST localhost:8000/run -d @input_examples/example_1.json` | "Everything is reachable over HTTP — judges can curl it. This is advisory 15, five counties." |
-| 3 | 0:35–1:05 | UI: the map fills, plan appears on the right | "29 actions. Every one cites World Model fact ids. 11 held for a human, 18 auto-committed." |
-| 4 | 1:05–1:30 | Scroll the trace panel to the `reject_plan` line, then `accept_plan` | **The loop.** "First pass opens 3 shelters — 5,441 spaces against 14,184 evacuees. The Critic refuses at 0.56 and sends the shortfall back. Second pass reaches 23,556 and is accepted." |
-| 5 | 1:30–1:45 | Trace lines showing `zetaris_query` with `row_count` | **Zetaris.** "Seven queries, every row stamped with its source table and SQL. Nothing else touches data." |
-| 6 | 1:45–2:00 | Trace lines with `"model":"nvidia/nemotron-…"` | **Nightshift.** "Every call goes to the Nightshift runtime, and the model that served it is on the line. Three Nemotron lanes." |
-| 7 | 2:00–2:35 | Click **Advisory 23 — track shifts south** | **The change of mind.** "27 beliefs change. 11 decisions invalidated, 36 preserved. Lee County enters, Hillsborough stands down. Sarasota was in both cones, so nothing touched it." |
-| 8 | 2:35–2:50 | Terminal: `./.venv/bin/python scripts/eval.py \| tail -20` | **The engines + scoreboard.** "35 perturbed scenarios. Zero unhandled violations, zero irreversible auto-commits, 3 of 3 correct abstentions. Markovian holds context flat across 24 steps." |
-| 9 | 2:50–3:00 | Slide 15 (the Lee County line) | "At advisory 15, with every forecast pointing at Tampa, it had already flagged Lee County to the operator. That's the Critic refusing to let a vulnerable area vanish — and handing the call to a human." |
+**One line.** A disaster response planning agent that changes its mind correctly when the world changes.
 
-Every figure in shot 1 is sourced in [IMPACT-DATA.md](IMPACT-DATA.md), straight from the NHC post-storm report.
-
-### Two warnings
-
-- **Shot 6 needs a working NVIDIA key in Nightshift.** Until then `models_used` reads `meterless/auto` and the trace says `"status":"fallback"`. Do not narrate Nemotron over a fallback line — a judge will read it.
-- **Shot 5 currently shows `"data_source":"sample_cache"`.** With Zetaris running it reads `"zetaris"`. If Zetaris is not up by record time, say plainly that the demo is in SAMPLE_MODE against recorded Zetaris results rather than glossing over it.
+**Short description.** Pulsar 5 plans shelter openings, supply staging and evacuation priority for a county emergency manager in the hours before a hurricane, replayed against Hurricane Ian 2022. Every fact enters through Zetaris with its source table, SQL and timestamp. A Planner proposes, a plain-code Simulator checks capacity and coverage, a Critic can reject and send the shortfall back, and a Risk agent holds every irreversible action for a human. When a new advisory arrives, a Belief Reviser walks the decision dependency graph and invalidates only the decisions that cited a fact that actually changed: at advisory 23, 27 beliefs change, 11 decisions are invalidated and 36 are preserved. Three Meterless engines carry the state (World Model), the memory across runs (H-MEM) and the bounded hourly replay (Markovian); every model call goes through Nightshift to a pinned Nemotron lane. Scoped to five Florida counties and one storm; the code is region-free, the registered data is not.
 
 ---
 
 ## 3. Form checklist
+
+- [ ] Teammates added **before** creating the submission (roster locks): Lazizbek, Anish Posim Reddy, Balaji Moka
+- [ ] Submission created early, even unfinished
+- [x] Public GitHub repo with README: https://github.com/lazizbekravshanov/pulsar5
+- [x] Live demo judges can open: https://pulsar5-nine.vercel.app
+- [x] Sponsor technology explanation (section 1 above)
+- [x] Slide deck as PDF: `docs/pulsar5-deck.pdf` in the repo (the artifact link is private and 403s for anyone else)
+- [x] Demo video, 3:24, at `~/pet/videos/pulsar5-demo/renders/pulsar5-demo.mp4` (attach the file, or publish it as a GitHub release asset for a link)
+- [x] Zetaris running locally, eight views registered, `verify.sh` 9/9
+- [x] Nightshift NVIDIA key working, three lanes pinned and serving
+- [ ] Submitted well before 23:45 UTC
+
 
 - [ ] Teammates added **before** creating the submission (roster locks)
 - [ ] Submission created early, even unfinished
