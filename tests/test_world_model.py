@@ -100,3 +100,48 @@ def test_stale_beliefs_reports_against_a_cutoff():
 
     stale = {b.fact_id for b in world.stale_beliefs("2022-09-26T00:00Z")}
     assert stale == {"old"}
+
+
+def test_snapshot_round_trips_through_from_snapshot():
+    """A world rebuilt from its snapshot is the same world: typed beliefs with
+    provenance, decisions with status and reason, conflicts and the revision."""
+    world = WorldModel()
+    world.put_entity("S-1", "shelter", capacity=1000, county="Lee")
+    world.put_entity("Z-9", "zone", population=5000)
+    world.relate("Z-9", "nearest_shelter", "S-1")
+    world.assert_belief("shelter:S-1:occupancy", "shelter:S-1", "current_occupancy", 100,
+                        _prov("2022-09-26T00:00Z"), written_by="Analyst")
+    world.assert_belief("shelter:S-1:occupancy", "shelter:S-1", "current_occupancy", 900,
+                        _prov("2022-09-27T00:00Z"), written_by="Reviser")
+    world.assert_belief("shelter:S-1:occupancy", "shelter:S-1", "current_occupancy", 10,
+                        _prov("2022-09-25T00:00Z"), written_by="Late")
+    world.record_decision("ACT-1", "open_shelter", "S-1", "open it", depends_on=["shelter:S-1:occupancy"],
+                          confidence=0.8)
+    world.record_decision("ACT-2", "evacuate_zone", "Z-9", "", depends_on=["zone:Z-9:population"])
+    world.set_decision_status("ACT-1", "committed")
+    world.set_decision_status("ACT-2", "invalidated", reason="declined by op1: no staff")
+
+    rebuilt = WorldModel.from_snapshot(world.snapshot())
+
+    assert rebuilt.snapshot() == world.snapshot()
+    assert rebuilt.revision == world.revision
+    belief = rebuilt.belief("shelter:S-1:occupancy")
+    assert belief.version == 2 and belief.written_by == "Reviser"
+    assert belief.provenance.source_table == "shelters" and belief.provenance.as_of == "2022-09-27T00:00Z"
+    assert rebuilt.conflicts()[0]["reason"] == "stale_write"
+    decision = rebuilt.decisions(status="invalidated")[0]
+    assert decision.decision_id == "ACT-2" and decision.invalidated_reason == "declined by op1: no staff"
+    assert rebuilt.decisions(status="committed")[0].depends_on == ("shelter:S-1:occupancy",)
+    assert rebuilt.related("Z-9", "nearest_shelter") == ["S-1"]
+    assert rebuilt.next_decision_number() == 2
+    assert {d.decision_id for d in rebuilt.depends_on_any(["shelter:S-1:occupancy"])} == {"ACT-1"}
+
+
+def test_from_snapshot_does_not_share_state_with_its_source():
+    snapshot = WorldModel().snapshot()
+    snapshot["entities"]["S-1"] = {"entity_id": "S-1", "kind": "shelter"}
+    rebuilt = WorldModel.from_snapshot(snapshot)
+    rebuilt.put_entity("S-2", "shelter")
+
+    assert "S-2" not in snapshot["entities"]
+    assert rebuilt.entity("S-1") == {"entity_id": "S-1", "kind": "shelter"}

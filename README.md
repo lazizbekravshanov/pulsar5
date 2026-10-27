@@ -220,7 +220,7 @@ Full report: [`output_examples/eval_report.json`](output_examples/eval_report.js
 | `GET /runs/{id}` | Plan, escalations, operator decisions, recalled memory, world digest |
 | `GET /runs/{id}/trace` | The JSONL trace |
 | `GET /runs/{id}/world` | Full World Model snapshot: beliefs with provenance, decision graph, conflicts |
-| `GET /health` | Zetaris and Nightshift reachability, pinned lane models |
+| `GET /health` | Zetaris and Nightshift reachability, pinned lane models, which run store is active |
 | `GET /` | Operator console: plan, map, change-of-mind diff, approve or decline held actions |
 
 Failures return a structured error with `type`, `message` and `recoverable` — never a stack trace, never a hang.
@@ -239,14 +239,14 @@ Outputs in [`output_examples/`](output_examples/), produced by real runs. A samp
 
 ## Tracing
 
-One file per run at `logs/trace-<run_id>.jsonl`, one JSON object per line: every agent step, handoff, critique, rejection, retry, fallback, Zetaris query with row count, engine operation, the model behind every call, and every escalation. Secrets are redacted on the way in, not on the way out ([`app/tracing.py`](app/tracing.py)).
+One file per run at `logs/trace-<run_id>.jsonl`, one JSON object per line: every agent step, handoff, critique, rejection, retry, fallback, Zetaris query with row count, engine operation, the model behind every call, and every escalation. Secrets are redacted on the way in, not on the way out ([`app/tracing.py`](app/tracing.py)). The trace text also travels in the run's record, so on the hosted demo `GET /runs/{id}/trace` is served from any instance, not only the one that wrote the file.
 
 ---
 
 ## Tests
 
 ```bash
-./.venv/bin/python -m pytest tests/ -q      # 34 passed
+./.venv/bin/python -m pytest tests/ -q      # 72 passed
 ```
 
 Engine conformance (concurrent writes, stale-write protection, cross-session recall, consolidation, 24-step bounded context, one-time H-MEM injection), plus: every action cites evidence that exists · Critic rejection produces a measurably better revision · the loop stops at the cap and still returns its best plan · an evacuation order never auto-commits · low confidence escalates even reversible actions · the Belief Reviser invalidates only dependents · three examples differ meaningfully · SAMPLE_MODE runs with empty credentials and never reads `output_examples/` · failures are structured.
@@ -258,7 +258,7 @@ Engine conformance (concurrent writes, stale-write protection, cross-session rec
 Stated plainly, because an emergency manager deserves to know what this is not.
 
 - **Not an official decision tool.** A research prototype built in a hackathon. Do not use it to make real evacuation decisions.
-- **Runs live in process memory.** `RUNS` in `app/orchestrator.py` is a dict, so a run, its events and its operator decisions last as long as the process does. On the hosted demo that is one serverless instance; a later request can land on another one and get a 404 for the run. The console handles that by rebuilding the run from the same request and retrying once, and says so. A durable run store is the fix, not done here.
+- **Runs are stored, and the store is last-writer-wins.** A run, its events and its operator decisions are written to a run store on every change and read back by whichever instance gets the next request ([`app/run_store.py`](app/run_store.py)). Locally that is one JSON file per run under `logs/runs/`. On the hosted demo it is a private Vercel Blob store, chosen when `BLOB_READ_WRITE_TOKEN` is set in the Vercel project's environment variables; the token lives there and nowhere in this repository. The record carries the World Model snapshot, the plan, the escalations, the decisions and the trace text, so `GET /runs/{id}/trace` answers on any instance, and `GET /health` says which backend is active. The console keeps its rebuild-and-retry fallback for the case where the store cannot be read. What the store does not do: two instances revising the same run at the same moment are not serialised against each other, so the last write wins. H-MEM on the hosted demo still lives in that instance's `/tmp`, so a lesson learned on one instance may not reach a run planned on another.
 - **Scoped to five Florida counties and one storm.** The planner, simulator and belief reviser never mention a place, and `region` is a request parameter (`WHERE county IN (...)` in `app/queries.py`). But every Zetaris table only holds the Ian replay: Lee, Charlotte, Sarasota, Pinellas and Hillsborough. Ask for another county and you get zero rows and an abstention. The live registrations carry a Florida filter in their endpoint URLs too (`scripts/zetaris/05_disaster_declarations.sql`, `07_storm_warnings_archive.sql`). Going to a second state needs one real change before any new data: the app keys on county *name*, and there are about a dozen Lee Counties in the US, so every table and query would switch to state plus county FIPS.
 - **The replay uses archived data.** Advisory positions are rounded and cones simplified. Real NHC products are more precise.
 - **Shelter occupancy during Ian is simulated.** `data/replay/facilities.json` is synthetic, generated to FEMA- and ACS-shaped distributions. No real shelter occupancy or patient data appears anywhere in this repository.
@@ -283,6 +283,7 @@ app/
   sim/               checks.py (deterministic verdict) capacity.py geo.py
   queries.py         named Lightning SQL + the predicates each one declares
   tracing.py         JSONL tracing with secret redaction
+  run_store.py       runs between requests: JSON files locally, a private Vercel Blob on the demo
 scripts/
   zetaris/*.sql      registration DDL, one file per source
   register_sources.py  dry-run by default, one statement at a time

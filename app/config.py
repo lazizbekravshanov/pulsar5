@@ -88,6 +88,9 @@ class Settings:
     model_deep: str = field(default_factory=lambda: os.getenv("METERLESS_MODEL_DEEP", ""))
     model_judge: str = field(default_factory=lambda: os.getenv("METERLESS_MODEL_JUDGE", ""))
 
+    # Run store: set by the host, selects the Vercel Blob backend when present.
+    blob_read_write_token: str = field(default_factory=lambda: os.getenv("BLOB_READ_WRITE_TOKEN", ""))
+
     # Runtime
     sample_mode: bool = field(default_factory=lambda: _bool("SAMPLE_MODE", False))
     log_level: str = field(default_factory=lambda: os.getenv("LOG_LEVEL", "INFO").upper())
@@ -115,7 +118,7 @@ class Settings:
 
     def secrets(self) -> list[str]:
         """Every value that must never reach a log, a trace or stdout."""
-        return [v for v in (self.zetaris_api_key, self.meterless_token) if v]
+        return [v for v in (self.zetaris_api_key, self.meterless_token, self.blob_read_write_token) if v]
 
 
 def load_settings(**overrides: object) -> Settings:

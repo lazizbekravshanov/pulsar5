@@ -413,10 +413,10 @@ const whoami = () => ($('#who').value.trim() || 'operator');
 try{ $('#who').value = localStorage.getItem('pulsar5.operator') || ''; }catch{}
 $('#who').addEventListener('change', () => { try{ localStorage.setItem('pulsar5.operator', $('#who').value.trim()); }catch{} });
 
-/* The hosted demo runs on serverless functions: a run lives in one
-   instance's memory and a later request can land on another. When the
-   server no longer knows the run, rebuild it from the same request, say
-   so, and retry once. */
+/* Runs are kept in a store that every server instance reads, so a 404
+   for a run the console just made should not happen. If it does (the
+   store could not be reached, or was emptied), rebuild the run from the
+   same request, say so, and retry once. */
 async function withRun(send){
   let res = await send();
   if(res.status !== 404 || !planRequest) return res;
@@ -426,7 +426,7 @@ async function withRun(send){
   replayed.clear(); decisions = {};
   document.querySelectorAll('[data-ev].applied').forEach(x=>x.classList.remove('applied'));
   /* Outside #out, which the render that follows will replace. */
-  $('#notices').innerHTML = '<p class="note warn">The server had lost this run (the hosted demo keeps runs in memory), so it was rebuilt from the same request before continuing. Decisions and events made on it before are gone.</p>';
+  $('#notices').innerHTML = '<p class="note warn">The server had lost this run, so it was rebuilt from the same request before continuing. Decisions and events made on it before are gone.</p>';
   return send();
 }
 /* The plan on screen, by action id, and what the operator has said about the

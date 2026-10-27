@@ -47,6 +47,16 @@ class Provenance:
             "data_source": self.data_source,
         }
 
+    @classmethod
+    def from_dict(cls, raw: dict[str, Any]) -> Provenance:
+        return cls(
+            source_table=raw["source_table"],
+            query=raw.get("query"),
+            as_of=raw["as_of"],
+            retrieved_at=raw["retrieved_at"],
+            data_source=raw.get("data_source", "zetaris"),
+        )
+
 
 @dataclass(frozen=True)
 class Belief:
@@ -70,6 +80,18 @@ class Belief:
             "written_by": self.written_by,
             "provenance": self.provenance.to_dict(),
         }
+
+    @classmethod
+    def from_dict(cls, raw: dict[str, Any]) -> Belief:
+        return cls(
+            fact_id=raw["fact_id"],
+            subject=raw["subject"],
+            predicate=raw["predicate"],
+            value=raw["value"],
+            provenance=Provenance.from_dict(raw["provenance"]),
+            version=raw.get("version", 1),
+            written_by=raw.get("written_by", "unknown"),
+        )
 
 
 LIVE_STATUSES = frozenset({"active", "escalated", "committed"})
@@ -101,6 +123,21 @@ class Decision:
             "created_at": self.created_at,
             "invalidated_reason": self.invalidated_reason,
         }
+
+    @classmethod
+    def from_dict(cls, raw: dict[str, Any]) -> Decision:
+        return cls(
+            decision_id=raw["decision_id"],
+            kind=raw["kind"],
+            target=raw["target"],
+            detail=raw.get("detail", ""),
+            depends_on=tuple(raw.get("depends_on", ())),
+            status=raw.get("status", "active"),
+            made_by=raw.get("made_by", "Planner"),
+            confidence=raw.get("confidence", 0.5),
+            created_at=raw["created_at"],
+            invalidated_reason=raw.get("invalidated_reason"),
+        )
 
 
 @dataclass
@@ -381,6 +418,24 @@ class WorldModel:
                 "decisions": {k: v.to_dict() for k, v in self._decisions.items()},
                 "conflicts": [dict(c) for c in self._conflicts],
             }
+
+    @classmethod
+    def from_snapshot(cls, snapshot: dict[str, Any]) -> WorldModel:
+        """The inverse of `snapshot()`: a world rebuilt from a stored one.
+
+        Everything is copied, so the snapshot can be kept or reused after the
+        world moves on. The write counter is not part of a snapshot and starts
+        again at zero; the revision carries over so a rebuilt world keeps
+        counting from where the original stopped.
+        """
+        world = cls()
+        world._revision = int(snapshot.get("revision", 0))
+        world._entities = {k: dict(v) for k, v in snapshot.get("entities", {}).items()}
+        world._relations = [dict(r) for r in snapshot.get("relations", [])]
+        world._beliefs = {k: Belief.from_dict(v) for k, v in snapshot.get("beliefs", {}).items()}
+        world._decisions = {k: Decision.from_dict(v) for k, v in snapshot.get("decisions", {}).items()}
+        world._conflicts = [dict(c) for c in snapshot.get("conflicts", [])]
+        return world
 
     def digest(self) -> dict[str, int]:
         """Small fixed-size summary — this is what Markovian carries between steps."""

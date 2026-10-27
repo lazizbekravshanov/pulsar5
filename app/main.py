@@ -6,13 +6,14 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Request
 from fastapi.responses import FileResponse, JSONResponse, PlainTextResponse
 
 from app.adapters.nightshift import NightshiftClient
 from app.adapters.zetaris import ZetarisClient
 from app.config import REPO_ROOT, load_settings
 from app.orchestrator import RUNS, Orchestrator
+from app.run_store import RunStoreError
 from app.schemas import (
     DecisionResponse,
     EventRequest,
@@ -38,6 +39,13 @@ def _message(exc: BaseException) -> str:
     return str(exc.args[0]) if exc.args else str(exc)
 
 
+@app.exception_handler(RunStoreError)
+def _store_down(_request: Request, exc: RunStoreError) -> JSONResponse:
+    """The run store is where a run made on another instance comes from; when
+    it cannot be read the honest answer is "try again", not "unknown run"."""
+    return JSONResponse(status_code=503, content={"detail": _message(exc)})
+
+
 @app.get("/health")
 def health() -> dict:
     settings = load_settings()
@@ -55,6 +63,7 @@ def health() -> dict:
                 "deep": settings.model_for_lane("deep"),
                 "judge": settings.model_for_lane("judge"),
             },
+            "run_store": _orchestrator.store.describe(),
             "active_runs": sorted(RUNS),
         }
     finally:
@@ -82,7 +91,7 @@ def events(request: EventRequest) -> EventResponse:
 
 @app.get("/runs/{run_id}")
 def get_run(run_id: str) -> dict:
-    state = RUNS.get(run_id)
+    state = _orchestrator.find(run_id)
     if state is None:
         raise HTTPException(status_code=404, detail=f"unknown run_id {run_id!r}")
     return {
@@ -100,7 +109,7 @@ def get_run(run_id: str) -> dict:
 
 @app.get("/runs/{run_id}/trace", response_class=PlainTextResponse)
 def get_trace(run_id: str) -> str:
-    state = RUNS.get(run_id)
+    state = _orchestrator.find(run_id)
     if state is None:
         raise HTTPException(status_code=404, detail=f"unknown run_id {run_id!r}")
     path = Path(state.tracer.log_file)
@@ -132,7 +141,7 @@ def list_decisions(run_id: str) -> DecisionResponse:
 
 @app.get("/runs/{run_id}/world")
 def get_world(run_id: str) -> dict:
-    state = RUNS.get(run_id)
+    state = _orchestrator.find(run_id)
     if state is None:
         raise HTTPException(status_code=404, detail=f"unknown run_id {run_id!r}")
     return state.world.snapshot()

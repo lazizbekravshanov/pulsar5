@@ -35,6 +35,7 @@ from app.config import Settings, load_settings
 from app.engines.hmem.engine import LEVEL_EPISODE, HMem
 from app.engines.markovian.engine import MarkovianRunner
 from app.engines.world_model.engine import WorldModel
+from app.run_store import RunStore, open_run_store
 from app.schemas import (
     Critique,
     DecisionResponse,
@@ -49,6 +50,7 @@ from app.schemas import (
     RunResponse,
     SimulationResult,
     StructuredError,
+    utc_now_iso,
 )
 from app.tracing import Tracer
 
@@ -78,13 +80,130 @@ class RunState:
     # decisions together, so neither sees the other half-done.
     lock: threading.RLock = field(default_factory=threading.RLock, repr=False, compare=False)
 
+    def to_record(self) -> dict[str, Any]:
+        """Everything another instance needs to pick this run up, as plain JSON.
 
+        The trace text rides along because the trace file lives on one
+        instance's disk; the record is what makes `GET /runs/{id}/trace`
+        answer anywhere. Settings keep only the per-run overrides; secrets
+        come from the environment of whichever instance reads this back.
+        """
+        with self.lock:
+            return {
+                "version": RECORD_VERSION,
+                "run_id": self.run_id,
+                "saved_at": utc_now_iso(),
+                "replay_hour": self.replay_hour,
+                "region": list(self.region),
+                "goal": self.goal,
+                "scenario": self.scenario,
+                "constraints": dict(self.constraints),
+                "lessons": list(self.lessons),
+                "plan": self.plan.model_dump(mode="json"),
+                "escalations": [e.model_dump(mode="json") for e in self.escalations],
+                "decisions": {k: d.model_dump(mode="json") for k, d in self.decisions.items()},
+                "world": self.world.snapshot(),
+                "settings": {
+                    "sample_mode": self.settings.sample_mode,
+                    "max_replan_iterations": self.settings.max_replan_iterations,
+                },
+                "trace": {
+                    "trace_id": self.tracer.trace_id,
+                    "log_file": str(self.tracer.log_file),
+                    "text": self.tracer.text(),
+                },
+            }
+
+    @classmethod
+    def from_record(cls, record: dict[str, Any]) -> RunState:
+        """The inverse of `to_record()`, on whatever instance is asked."""
+        settings = load_settings()
+        overrides = record.get("settings", {})
+        if "sample_mode" in overrides:
+            settings.sample_mode = bool(overrides["sample_mode"])
+        if "max_replan_iterations" in overrides:
+            settings.max_replan_iterations = int(overrides["max_replan_iterations"])
+        trace = record.get("trace", {})
+        tracer = Tracer.resume(
+            record["run_id"],
+            trace_id=trace.get("trace_id") or "",
+            text=trace.get("text", ""),
+            secrets=settings.secrets(),
+        )
+        return cls(
+            run_id=record["run_id"],
+            settings=settings,
+            world=WorldModel.from_snapshot(record.get("world", {})),
+            tracer=tracer,
+            memory=HMem(),
+            plan=Plan.model_validate(record["plan"]),
+            constraints=dict(record.get("constraints", {})),
+            replay_hour=record["replay_hour"],
+            region=list(record.get("region", [])),
+            goal=record.get("goal", ""),
+            scenario=record.get("scenario", ""),
+            escalations=[Escalation.model_validate(e) for e in record.get("escalations", [])],
+            lessons=list(record.get("lessons", [])),
+            decisions={k: OperatorDecision.model_validate(d) for k, d in record.get("decisions", {}).items()},
+        )
+
+
+RECORD_VERSION = 1
+
+# The runs this instance has in hand. A cache in front of the run store: a
+# miss here is read from the store, so a request for a run made elsewhere is
+# served the same as one made here.
 RUNS: dict[str, RunState] = {}
+_RESTORE_LOCK = threading.Lock()
 
 
 class Orchestrator:
-    def __init__(self, settings: Settings | None = None) -> None:
+    def __init__(self, settings: Settings | None = None, store: RunStore | None = None) -> None:
         self.settings = settings or load_settings()
+        self.store = store or open_run_store(self.settings)
+
+    # ------------------------------------------------------------------ runs
+
+    def find(self, run_id: str) -> RunState | None:
+        """The run from the cache, else from the store and then cached."""
+        state = RUNS.get(run_id)
+        if state is not None:
+            return state
+        with _RESTORE_LOCK:
+            state = RUNS.get(run_id)
+            if state is not None:
+                return state
+            record = self.store.load(run_id)
+            if record is None:
+                return None
+            state = RunState.from_record(record)
+            state.tracer.log(
+                agent_name="Orchestrator",
+                action="run_restored",
+                output_summary=f"run {run_id} read back from the {self.store.name} store on another instance",
+            )
+            RUNS[run_id] = state
+            return state
+
+    def require(self, run_id: str) -> RunState:
+        state = self.find(run_id)
+        if state is None:
+            raise KeyError(f"unknown run_id {run_id!r}; POST /run first")
+        return state
+
+    def _persist(self, state: RunState) -> None:
+        """Write the run through to the store. A store that is down costs the
+        run its durability, not its answer: the failure goes on the trace and
+        the request still returns."""
+        try:
+            self.store.save(state.run_id, state.to_record())
+        except Exception as exc:
+            state.tracer.log(
+                agent_name="Orchestrator",
+                action="run_store_write_failed",
+                output_summary=f"{self.store.name}: {str(exc)[:300]}",
+                status="error",
+            )
 
     # --------------------------------------------------------------------- run
 
@@ -160,7 +279,7 @@ class Orchestrator:
 
             self._write_lessons(memory, request, plan, simulation, critique, tracer)
 
-            RUNS[request.run_id] = RunState(
+            state = RunState(
                 run_id=request.run_id,
                 settings=settings,
                 world=world,
@@ -175,6 +294,7 @@ class Orchestrator:
                 escalations=escalations,
                 lessons=lessons,
             )
+            RUNS[request.run_id] = state
 
             status = "escalated" if escalations or unresolved else "completed"
             tracer.log(
@@ -186,6 +306,7 @@ class Orchestrator:
                 ),
                 confidence=critique.confidence,
             )
+            self._persist(state)
 
             return RunResponse(
                 run_id=request.run_id,
@@ -228,9 +349,7 @@ class Orchestrator:
 
     def apply_event(self, run_id: str, event: Event) -> EventResponse:
         started = time.monotonic()
-        state = RUNS.get(run_id)
-        if state is None:
-            raise KeyError(f"unknown run_id {run_id!r}; POST /run first")
+        state = self.require(run_id)
 
         zetaris = ZetarisClient(state.settings, state.tracer)
         nightshift = NightshiftClient(state.settings, state.tracer)
@@ -241,9 +360,11 @@ class Orchestrator:
         planner, simulator, critic, risk = Planner(ctx), Simulator(ctx), Critic(ctx), Risk(ctx)
 
         with state.lock:
-            return self._apply_event_locked(
+            response = self._apply_event_locked(
                 state, event, started, reviser, analyst, planner, simulator, critic, risk, zetaris, nightshift
             )
+            self._persist(state)
+            return response
 
     def _apply_event_locked(
         self, state: RunState, event: Event, started: float, reviser, analyst, planner, simulator, critic, risk,
@@ -359,11 +480,11 @@ class Orchestrator:
         committed on its own, or declining it, would be a different feature
         (a veto) and is refused rather than silently accepted.
         """
-        state = RUNS.get(run_id)
-        if state is None:
-            raise KeyError(f"unknown run_id {run_id!r}; POST /run first")
+        state = self.require(run_id)
         with state.lock:
-            return self._decide_locked(state, request)
+            response = self._decide_locked(state, request)
+            self._persist(state)
+            return response
 
     def _decide_locked(self, state: RunState, request: OperatorDecisionRequest) -> DecisionResponse:
         run_id = state.run_id
@@ -427,9 +548,7 @@ class Orchestrator:
         return self._decision_response(state, decision)
 
     def list_decisions(self, run_id: str) -> DecisionResponse:
-        state = RUNS.get(run_id)
-        if state is None:
-            raise KeyError(f"unknown run_id {run_id!r}; POST /run first")
+        state = self.require(run_id)
         with state.lock:
             return self._decision_response(state, None)
 

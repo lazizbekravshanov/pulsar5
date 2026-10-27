@@ -71,6 +71,42 @@ class Tracer:
         self.engines_used: list[str] = []
         self.zetaris_queries = 0
 
+    @classmethod
+    def resume(
+        cls,
+        run_id: str,
+        *,
+        trace_id: str,
+        text: str,
+        secrets: Iterable[str] = (),
+        logs_dir: Path | None = None,
+        echo: bool = True,
+    ) -> Tracer:
+        """Pick a stored trace back up on an instance that never wrote it.
+
+        The stored lines go back into the file so later lines append to them,
+        the trace id is kept so those lines belong to the same run, and the
+        counters are rebuilt from the lines. Nothing is echoed: these lines
+        were printed when they were first written.
+        """
+        tracer = cls(run_id, secrets=secrets, logs_dir=logs_dir, echo=echo)
+        tracer.trace_id = trace_id or tracer.trace_id
+        tracer.log_file.write_text(text, encoding="utf-8")
+        for line in text.splitlines():
+            if not line.strip():
+                continue
+            try:
+                record = json.loads(line)
+            except json.JSONDecodeError:
+                continue
+            tracer._absorb(record)
+        return tracer
+
+    def text(self) -> str:
+        """Everything written so far, as the file has it (secrets redacted)."""
+        with self._lock:
+            return self.log_file.read_text(encoding="utf-8") if self.log_file.exists() else ""
+
     # ---------------------------------------------------------------- core
 
     def log(
@@ -112,23 +148,28 @@ class Tracer:
 
         line = redact(json.dumps(record, default=str), self._secrets)
 
-        served = status == "success" and not (extra or {}).get("fallback_used")
         with self._lock:
-            if model:
-                if model not in self.models_attempted:
-                    self.models_attempted.append(model)
-                if served and model not in self.models_used:
-                    self.models_used.append(model)
-            if engine and engine not in self.engines_used:
-                self.engines_used.append(engine)
-            if zetaris_query:
-                self.zetaris_queries += 1
-            self.events.append(json.loads(line))
+            self._absorb(json.loads(line))
             with self.log_file.open("a", encoding="utf-8") as fh:
                 fh.write(line + "\n")
             if self._echo:
                 self._print(record)
         return record
+
+    def _absorb(self, record: dict[str, Any]) -> None:
+        """Count one line into the running totals and keep it in `events`."""
+        model, engine = record.get("model"), record.get("engine")
+        served = record.get("status") == "success" and not record.get("fallback_used")
+        if model:
+            if model not in self.models_attempted:
+                self.models_attempted.append(model)
+            if served and model not in self.models_used:
+                self.models_used.append(model)
+        if engine and engine not in self.engines_used:
+            self.engines_used.append(engine)
+        if record.get("zetaris_query"):
+            self.zetaris_queries += 1
+        self.events.append(record)
 
     def _print(self, record: dict[str, Any]) -> None:
         bits = [f"[{record['agent_name']}]", record["action"]]
