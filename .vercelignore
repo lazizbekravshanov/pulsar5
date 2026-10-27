@@ -1,0 +1,13 @@
+.venv
+venv
+tests
+docs
+logs
+output_examples
+scripts
+.pytest_cache
+__pycache__
+*.pyc
+.git
+Dockerfile
+.dockerignore

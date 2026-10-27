@@ -1,0 +1,19 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "functions": {
+    "api/index.py": {
+      "includeFiles": "{app/**,data/**,ui/**,input_examples/**}",
+      "maxDuration": 30,
+      "memory": 1024
+    }
+  },
+  "rewrites": [
+    { "source": "/(.*)", "destination": "/api/index" }
+  ],
+  "env": {
+    "SAMPLE_MODE": "true",
+    "PULSAR5_LOGS_DIR": "/tmp/pulsar5-logs",
+    "PULSAR5_HMEM_DIR": "/tmp/pulsar5-hmem",
+    "MAX_REPLAN_ITERATIONS": "3"
+  }
+}
