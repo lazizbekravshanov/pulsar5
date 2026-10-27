@@ -43,11 +43,11 @@
 
   /* ---------------------------------------------------------- masthead */
   header{
-    display:flex;align-items:baseline;gap:16px;
+    display:flex;align-items:baseline;gap:16px;row-gap:3px;flex-wrap:wrap;
     padding:13px 20px;border-bottom:1px solid var(--rule);background:var(--board);
   }
   header h1{
-    margin:0;font-size:17px;font-weight:700;letter-spacing:-.015em;
+    margin:0;font-size:17px;font-weight:700;letter-spacing:-.015em;white-space:nowrap;
   }
   header .what{color:var(--quiet);font-size:13.5px}
   .badge{
@@ -98,6 +98,18 @@
     margin-top:7px;text-align:left;
   }
   button.ghost:hover{background:var(--raised);border-color:var(--faint)}
+  button.ghost.applied{border-color:var(--commit);display:flex;justify-content:space-between;align-items:baseline;gap:10px}
+  button.ghost.applied::after{content:"applied";font:500 11px/1 var(--mono);color:var(--commit)}
+
+  /* County chips. A multi-select hides its own rules (ctrl-click, shift-click);
+     five toggles show their state and need no instructions. */
+  .chips{display:flex;flex-wrap:wrap;gap:6px}
+  .chip{
+    width:auto;margin:0;padding:5px 10px;font-size:13px;font-weight:500;
+    background:var(--ground);color:var(--quiet);border:1px solid var(--rule);border-radius:3px;
+  }
+  .chip:hover{background:var(--raised);color:var(--ink)}
+  .chip[aria-pressed="true"]{background:var(--raised);color:var(--ink);border-color:var(--quiet)}
 
   .note{
     font-size:13px;color:var(--quiet);line-height:1.5;
@@ -144,6 +156,39 @@
   .act .m{font:400 12px/1 var(--mono);color:var(--faint)}
   .act .m b{color:var(--quiet);font-weight:500}
   .act .m.cite{color:var(--cite);cursor:help}
+  /* Rows with a place on the map are live: hover shows where, click goes there. */
+  .act[data-target]{cursor:pointer;transition:background .15s}
+  .act[data-target]:hover{background:var(--board)}
+  .act.lit{background:var(--raised)}
+
+  /* Filter for the status board. Amber rows are the ones that need a person. */
+  .seg{display:inline-flex;margin:-2px 0 12px;border:1px solid var(--rule);border-radius:3px;overflow:hidden}
+  .seg button{
+    width:auto;margin:0;padding:5px 11px;font-size:12.5px;font-weight:500;
+    background:transparent;color:var(--quiet);border:0;border-radius:0;
+  }
+  .seg button+button{border-left:1px solid var(--rule)}
+  .seg button:hover{background:var(--raised);color:var(--ink)}
+  .seg button[aria-pressed="true"]{background:var(--raised);color:var(--ink);font-weight:600}
+  .seg b{font:500 11.5px/1 var(--mono);margin-left:6px;color:var(--faint)}
+  .seg button[aria-pressed="true"] b{color:var(--quiet)}
+  .acts[data-show="held"] .act:not(.held){display:none}
+  .acts[data-show="auto"] .act.held{display:none}
+
+  /* After a change of mind the earlier plan is history, kept but dimmed. */
+  details.prior{margin-top:22px;border-top:1px solid var(--rule);padding-top:12px}
+  details.prior>summary{
+    cursor:pointer;font-size:12.5px;color:var(--quiet);list-style:none;
+    display:flex;gap:8px;align-items:center;
+  }
+  details.prior>summary::-webkit-details-marker{display:none}
+  details.prior>summary::before{
+    content:"";width:0;height:0;border:4px solid transparent;border-left:6px solid var(--faint);
+    transition:transform .15s;
+  }
+  details.prior[open]>summary::before{transform:rotate(90deg)}
+  details.prior>summary:hover{color:var(--ink)}
+  details.prior>div{margin-top:14px;opacity:.72}
 
   /* ---------------------------------------------------------- diff */
   .diff{display:grid;grid-template-columns:1fr 1fr;gap:0;border:1px solid var(--rule);border-radius:6px;overflow:hidden;margin:12px 0 18px}
@@ -165,21 +210,33 @@
   .trace .acc{color:var(--commit)}
   .trace .eng{color:var(--cite)}
 
-  .legend{font-size:12.5px;color:var(--quiet);display:flex;flex-direction:column;gap:5px}
-  .legend div{display:flex;align-items:center;gap:8px}
-  .legend i{width:9px;height:9px;border-radius:2px;flex:none}
+  /* The legend sits on the map it explains, drawn with the marker shapes. */
+  .legend-box{
+    background:rgba(17,26,34,.93);border:1px solid var(--rule);border-radius:4px;
+    padding:8px 11px;font-size:12px;color:var(--quiet);line-height:1.75;
+  }
+  .legend-box div{display:flex;align-items:center;gap:9px}
+  .legend-box i{flex:none;display:block}
+  .legend-box .zone{width:10px;height:10px;border-radius:50%;background:#d9544d}
+  .legend-box .zone.idle{background:rgba(133,149,163,.35);border:1px solid #8595a3}
+  .legend-box .shel{width:9px;height:9px;border-radius:2px;background:#4fb286}
+  .legend-box .stag{width:0;height:0;border-left:6px solid transparent;border-right:6px solid transparent;border-bottom:10px solid #5aa7e8}
+  .legend-box .cone{width:12px;height:9px;border:1.5px dashed #e8913a;border-radius:2px}
 
   .spin{
     display:inline-block;width:11px;height:11px;border:2px solid rgba(10,15,20,.3);
     border-top-color:var(--ground);border-radius:50%;animation:s .7s linear infinite;
     vertical-align:-1px;margin-right:5px;
   }
+  .spin.onboard{border-color:rgba(231,237,241,.22);border-top-color:var(--ink)}
   @keyframes s{to{transform:rotate(360deg)}}
   @media (prefers-reduced-motion:reduce){.spin{animation:none}}
 
   /* ---------------------------------------------------------- leaflet */
   .leaflet-container{background:#070c11;font-family:var(--sans)}
-  .basemap{filter:invert(1) hue-rotate(188deg) brightness(.68) contrast(.9) saturate(.42)}
+  /* Filter the whole tile pane, not each tile: per-tile filters leave hairline
+     seams at the tile edges. */
+  .leaflet-tile-pane{filter:invert(1) hue-rotate(188deg) brightness(.68) contrast(.9) saturate(.42)}
   .leaflet-popup-content-wrapper,.leaflet-popup-tip{
     background:var(--board);color:var(--ink);border:1px solid var(--rule);border-radius:4px;
   }
@@ -198,6 +255,12 @@
     main{grid-template-columns:1fr;height:auto}
     #map{height:420px}
     .col+.col{border-left:0;border-top:1px solid var(--rule)}
+  }
+  @media (max-width:760px){
+    .legend-box{font-size:11px;line-height:1.55;padding:6px 9px}
+    header{padding:11px 16px}
+    header .what{flex-basis:100%;order:3;font-size:12.5px}
+    .col{padding:16px 16px 32px}
   }
 </style>
 </head>
@@ -223,14 +286,14 @@
         <option value="2022-09-27T16:00Z">27 Sep 16:00, advisory 21, track moves south</option>
         <option value="2022-09-28T10:00Z">28 Sep 10:00, advisory 25, aimed at Lee</option>
       </select>
-      <label for="region">Counties in scope</label>
-      <select id="region" multiple size="5">
-        <option value="Lee" selected>Lee</option>
-        <option value="Charlotte" selected>Charlotte</option>
-        <option value="Sarasota" selected>Sarasota</option>
-        <option value="Pinellas" selected>Pinellas</option>
-        <option value="Hillsborough" selected>Hillsborough</option>
-      </select>
+      <label id="region-label">Counties in scope</label>
+      <div class="chips" id="region" role="group" aria-labelledby="region-label">
+        <button type="button" class="chip" data-v="Lee" aria-pressed="true">Lee</button>
+        <button type="button" class="chip" data-v="Charlotte" aria-pressed="true">Charlotte</button>
+        <button type="button" class="chip" data-v="Sarasota" aria-pressed="true">Sarasota</button>
+        <button type="button" class="chip" data-v="Pinellas" aria-pressed="true">Pinellas</button>
+        <button type="button" class="chip" data-v="Hillsborough" aria-pressed="true">Hillsborough</button>
+      </div>
       <label for="trucks">Supply trucks available</label><input id="trucks" type="number" value="12" min="1" max="200">
       <label for="staging">Staging sites allowed</label><input id="staging" type="number" value="4" min="1" max="12">
       <label for="steps">Hours to replay</label><input id="steps" type="number" value="1" min="1" max="48">
@@ -245,16 +308,6 @@
       <button class="ghost" data-ev="road">I-75 ramp closes at Corkscrew</button>
     </section>
 
-    <section>
-      <h2>Reading the map</h2>
-      <div class="legend">
-        <div><i style="background:#d9544d"></i>zone being evacuated</div>
-        <div><i style="background:#8595a3"></i>zone with no action</div>
-        <div><i style="background:#4fb286"></i>shelter opened</div>
-        <div><i style="background:#5aa7e8"></i>supply staging site</div>
-        <div><i style="background:rgba(232,145,58,.45)"></i>forecast cone</div>
-      </div>
-    </section>
   </div>
 
   <!-- ------------------------------------------------ map -->
@@ -265,6 +318,7 @@
     <section id="out">
       <h2>No plan yet</h2>
       <p class="note">Pick an hour and press Plan. Every action cites the facts it rests on, a simulator checks it, and a critic can send it back before anything commits.</p>
+      <p class="note">Once there is a plan, hover a row to see where it is on the map, and click a marker to find its row.</p>
     </section>
   </div>
 </main>
@@ -281,8 +335,24 @@ L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
 }).addTo(map);
 L.control.attribution({prefix:false, position:'bottomright'}).addTo(map);
 let layer = L.layerGroup().addTo(map);
+let halo = L.layerGroup().addTo(map);
+const markers = new Map();   /* entity_id -> marker, so a row can find its place */
+const reduceMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
 
-let runId = null, world = null;
+const legend = L.control({position:'bottomleft'});
+legend.onAdd = () => {
+  const d = L.DomUtil.create('div', 'legend-box');
+  d.innerHTML = `<div><i class="zone"></i>zone being evacuated</div>
+    <div><i class="zone idle"></i>zone with no action</div>
+    <div><i class="shel"></i>shelter opened</div>
+    <div><i class="stag"></i>supply staging site</div>
+    <div><i class="cone"></i>forecast cone</div>`;
+  L.DomEvent.disableClickPropagation(d);
+  return d;
+};
+legend.addTo(map);
+
+let runId = null, world = null, sampleMode = false;
 /* The request that built the current plan, so an event can rebuild the
    world it was planned against. Cleared and refilled on every Plan. */
 let planRequest = null;
@@ -290,6 +360,7 @@ const replayed = new Set();
 
 /* ---------------------------------------------------------- health */
 fetch('/health').then(r=>r.json()).then(h=>{
+  sampleMode = !!h.sample_mode;
   const live = h.zetaris.reachable && h.nightshift.reachable;
   const z = h.zetaris.reachable ? 'Zetaris live' : (h.sample_mode ? 'Zetaris from cache' : 'Zetaris down');
   const ns = h.nightshift.reachable ? 'Nightshift live' : (h.sample_mode ? 'Nightshift recorded' : 'Nightshift down');
@@ -298,9 +369,18 @@ fetch('/health').then(r=>r.json()).then(h=>{
 }).catch(()=>{ $('#badge').innerHTML = '<span class="dot"></span>API unreachable'; });
 
 /* ---------------------------------------------------------- run */
+document.querySelectorAll('#region .chip').forEach(c => c.onclick = () =>
+  c.setAttribute('aria-pressed', c.getAttribute('aria-pressed') !== 'true'));
+
 $('#go').onclick = async () => {
+  const region = [...document.querySelectorAll('#region .chip[aria-pressed="true"]')].map(b=>b.dataset.v);
+  if(!region.length){
+    $('#out').innerHTML = '<h2>No plan yet</h2><p class="note warn">Pick at least one county, then press Plan.</p>';
+    return;
+  }
   const btn = $('#go'); btn.disabled = true; btn.innerHTML = '<span class="spin"></span>Planning';
-  const region = [...$('#region').selectedOptions].map(o=>o.value);
+  document.querySelectorAll('[data-ev].applied').forEach(x=>x.classList.remove('applied'));
+  $('#out').innerHTML = '<h2>Planning</h2><p class="note"><span class="spin onboard"></span>Querying Zetaris, drafting a plan, simulating it, and letting the critic push back.</p>';
   const hour = $('#hour').value;
   runId = `ui-${hour}-${region.length}c-${Date.now()}`;
   planRequest = {run_id: runId, input:{
@@ -354,6 +434,7 @@ document.querySelectorAll('[data-ev]').forEach(b => b.onclick = async () => {
         return;
       }
       replayed.clear();
+      document.querySelectorAll('[data-ev].applied').forEach(x=>x.classList.remove('applied'));
     }
     b.innerHTML = '<span class="spin"></span>Revising';
     const res = await fetch('/events', {method:'POST', headers:{'Content-Type':'application/json'},
@@ -361,6 +442,7 @@ document.querySelectorAll('[data-ev]').forEach(b => b.onclick = async () => {
     if(!res.ok){ return; }
     const data = await res.json();
     replayed.add(key);
+    b.classList.add('applied');
     world = await (await fetch(`/runs/${runId}/world`)).json();
     renderEvent(data);
     if(data.revised_plan) draw(data.revised_plan);
@@ -369,11 +451,22 @@ document.querySelectorAll('[data-ev]').forEach(b => b.onclick = async () => {
 });
 
 /* ---------------------------------------------------------- render */
+/* A new plan or revision starts at the top: the column scrolls on a wide
+   screen, the page does when the columns are stacked. */
+function reveal(el){
+  /* Next frame, once the new content is laid out, and instant: a smooth
+     scroll here gets cut short by the map re-fitting at the same time. */
+  requestAnimationFrame(() => {
+    el.parentElement.scrollTop = 0;
+    if(matchMedia('(max-width:1100px)').matches) el.scrollIntoView({block:'start'});
+  });
+}
+
 function actionRow(a, escalated){
   const held = escalated.has(a.action_id);
   const cites = (a.evidence_ids||[]).length;
   const verb = {evacuate_zone:'Evacuate', open_shelter:'Open', stage_supplies:'Stage at', hold:'Hold'}[a.kind] || a.kind;
-  return `<div class="act ${held?'held':''}">
+  return `<div class="act ${held?'held':''}" data-target="${esc(a.target)}">
     <div class="top">
       <span class="kind">${esc(verb)}</span>
       <span class="tgt">${esc(a.target)}</span>
@@ -395,8 +488,12 @@ function renderRun(d){
   const acts = [...o.plan.actions].sort((a,b)=>(order[a.kind]-order[b.kind])||(a.priority-b.priority));
   const margin = m.capacity_margin || 0;
 
+  const held = escalated.size, total = o.plan.actions.length;
+  const when = $('#hour').selectedOptions[0]?.textContent || '';
+  reveal($('#out'));
   $('#out').innerHTML = `
-    <h2>${o.plan.actions.length} actions for the next 24 hours</h2>
+    <h2>${total} actions for the next 24 hours</h2>
+    <p class="note">Planned at ${esc(when)}, ${planRequest.input.region.length} counties in scope.</p>
     <div class="outcome">
       <div class="stat"><span>Shelter-seeking evacuees expected</span><b>${n(Math.round(m.expected_evacuees))}</b></div>
       <div class="stat"><span>Spaces in the shelters being opened</span><b>${n(Math.round(m.open_shelter_capacity))}</b></div>
@@ -406,15 +503,63 @@ function renderRun(d){
       <div class="stat"><span>Critic</span><b>${o.critique.accepted?'accepted':'refused'} at ${o.critique.confidence.toFixed(2)}</b></div>
       <div class="stat"><span>Revisions before it settled</span><b>${d.iterations}</b></div>
       <div class="stat"><span>Queries through Zetaris</span><b>${d.zetaris_queries}</b></div>
-      <div class="stat"><span>Models that answered</span><b>${esc(d.models_used.join(', ')) || 'none, fell back'}</b></div>
+      <div class="stat"><span>Models that answered</span><b>${esc(d.models_used.join(', ')) || (sampleMode ? 'none, sample mode' : 'none, fell back')}</b></div>
       <div class="stat"><span>Time taken</span><b>${d.execution_time_seconds}s</b></div>
     </div>
 
     ${o.memory_recalled.length?`<section><h2>Carried over from earlier runs</h2>${o.memory_recalled.map(l=>`<p class="note">${esc(l)}</p>`).join('')}</section>`:''}
     ${o.unresolved_issues.length?`<section><h2>Your call</h2>${o.unresolved_issues.map(u=>`<p class="note warn">${esc(u)}</p>`).join('')}</section>`:''}
 
-    <section><h2>What it wants to do</h2>${acts.map(a=>actionRow(a, escalated)).join('')}</section>
+    <section class="acts" data-show="all"><h2>What it wants to do</h2>
+      <div class="seg" role="group" aria-label="Show">
+        <button type="button" data-show="all" aria-pressed="true">All<b>${total}</b></button>
+        <button type="button" data-show="held" aria-pressed="false">Needs you<b>${held}</b></button>
+        <button type="button" data-show="auto" aria-pressed="false">Committed<b>${total-held}</b></button>
+      </div>
+      ${acts.map(a=>actionRow(a, escalated)).join('')}</section>
     <section><h2>How it got there</h2><div class="trace" id="trace">loading</div></section>`;
+}
+
+/* The status board is live: hover a row to see where it is, click to go
+   there; the filter is a class on the section. Delegated, because the
+   board is rebuilt on every plan and every event. */
+$('#out').addEventListener('click', e => {
+  const seg = e.target.closest('.seg button');
+  if(seg){
+    const sec = seg.closest('.acts');
+    sec.dataset.show = seg.dataset.show;
+    sec.querySelectorAll('.seg button').forEach(b => b.setAttribute('aria-pressed', b === seg));
+    return;
+  }
+  const row = e.target.closest('.act[data-target]');
+  if(row) locate(row.dataset.target);
+});
+$('#out').addEventListener('mouseover', e => {
+  const row = e.target.closest('.act[data-target]');
+  if(row) showHalo(row.dataset.target);
+});
+$('#out').addEventListener('mouseout', e => {
+  const row = e.target.closest('.act[data-target]');
+  if(row && !row.contains(e.relatedTarget)) halo.clearLayers();
+});
+
+function showHalo(id){
+  halo.clearLayers();
+  const mk = markers.get(id); if(!mk) return;
+  L.circleMarker(mk.getLatLng(), {radius:15, color:'#e7edf1', weight:1.5, fillOpacity:0, interactive:false}).addTo(halo);
+}
+function locate(id){
+  const mk = markers.get(id); if(!mk) return;
+  showHalo(id);
+  map.flyTo(mk.getLatLng(), Math.max(map.getZoom(), 10), {animate:!reduceMotion, duration:.6});
+  setTimeout(() => mk.openPopup(), reduceMotion ? 0 : 650);
+}
+function focusRow(id){
+  const row = document.querySelector(`.act[data-target="${CSS.escape(id)}"]`); if(!row) return;
+  for(let d = row.closest('details'); d; d = d.parentElement?.closest('details')) d.open = true;
+  row.scrollIntoView({block:'center', behavior: reduceMotion ? 'auto' : 'smooth'});
+  row.classList.add('lit');
+  setTimeout(() => row.classList.remove('lit'), 1800);
 }
 
 function renderEvent(d){
@@ -425,7 +570,14 @@ function renderEvent(d){
       .forEach(a=>{const k=county(a.target); c[k]=(c[k]||0)+1;});
     return Object.keys(c).length ? Object.entries(c).sort().map(([k,v])=>`${k} ${v}`).join(', ') : 'nothing'; };
 
-  $('#out').insertAdjacentHTML('afterbegin', `
+  /* The plan on screen was made against a world that no longer exists.
+     Keep it, dimmed and folded, under the revision that replaced it. */
+  const out = $('#out');
+  out.querySelector('#trace')?.removeAttribute('id');
+  const priorTitle = out.querySelector('h2')?.textContent || 'the earlier plan';
+  const prior = `<details class="prior"><summary>Before this change: ${esc(priorTitle)}</summary><div>${out.innerHTML}</div></details>`;
+  reveal(out);
+  out.innerHTML = `
     <h2>It changed its mind</h2>
     <div class="outcome">
       <div class="stat"><span>Beliefs that changed</span><b style="color:var(--cite)">${d.changed_beliefs.length}</b></div>
@@ -438,13 +590,15 @@ function renderEvent(d){
     </div>
     ${dd.added.length?`<section><h2>Newly ordered</h2>${dd.added.map(a=>actionRow(a, escalated)).join('')}</section>`:''}
     ${dd.removed.length?`<section><h2>Stood down</h2><p class="note">${dd.removed.map(esc).join(', ')}</p></section>`:''}
-    <hr style="border:0;border-top:1px solid var(--rule);margin:22px 0">`);
+    <section><h2>How it got there</h2><div class="trace" id="trace">loading</div></section>
+    ${prior}`;
 }
 
 /* ---------------------------------------------------------- map */
 function draw(plan){
-  layer.clearLayers();
+  layer.clearLayers(); halo.clearLayers(); markers.clear();
   if(!world) return;
+  const keep = (id, mk) => { markers.set(id, mk); mk.on('click', () => focusRow(id)); return mk; };
   const ents = Object.values(world.entities || {});
   const evac = new Set(plan.actions.filter(a=>a.kind==='evacuate_zone').map(a=>a.target));
   const opened = new Set(plan.actions.filter(a=>a.kind==='open_shelter').map(a=>a.target));
@@ -464,9 +618,9 @@ function draw(plan){
     if(e.lat == null || e.lon == null) return;
     if(e.kind === 'zone'){
       const on = evac.has(e.entity_id);
-      L.circleMarker([e.lat, e.lon], {radius: 5 + (e.vulnerability_score||0)*7,
+      keep(e.entity_id, L.circleMarker([e.lat, e.lon], {radius: 5 + (e.vulnerability_score||0)*7,
         color: on?'#d9544d':'#8595a3', weight: on?2:1,
-        fillColor: on?'#d9544d':'#8595a3', fillOpacity: on?.5:.16})
+        fillColor: on?'#d9544d':'#8595a3', fillOpacity: on?.5:.16}))
         .bindPopup(`<b>${esc(e.entity_id)}</b><br>${esc(e.county)} County<br>
           ${n(e.population)} people<br>
           vulnerability ${(e.vulnerability_score||0).toFixed(2)}<br>
@@ -474,16 +628,16 @@ function draw(plan){
     } else if(e.kind === 'shelter'){
       const on = opened.has(e.entity_id);
       const free = Math.max(0,(e.capacity||0)-(e.current_occupancy||0));
-      L.marker([e.lat, e.lon], {icon: L.divIcon({className:'', html:
+      keep(e.entity_id, L.marker([e.lat, e.lon], {icon: L.divIcon({className:'', html:
         `<div style="width:10px;height:10px;border-radius:2px;background:${on?'#4fb286':'#223040'};
-          border:1.5px solid ${on?'#4fb286':'#36465a'}"></div>`, iconSize:[10,10]})})
+          border:1.5px solid ${on?'#4fb286':'#36465a'}"></div>`, iconSize:[10,10]})}))
         .bindPopup(`<b>${esc(e.name||e.entity_id)}</b><br>${esc(e.county)} County<br>
           ${n(free)} spaces free of ${n(e.capacity)}<br>${on?'opened by this plan':'not opened'}`).addTo(layer);
     } else if(e.kind === 'staging_site'){
       const on = staged.has(e.entity_id);
-      L.marker([e.lat, e.lon], {icon: L.divIcon({className:'', html:
+      keep(e.entity_id, L.marker([e.lat, e.lon], {icon: L.divIcon({className:'', html:
         `<div style="width:0;height:0;border-left:7px solid transparent;border-right:7px solid transparent;
-          border-bottom:12px solid ${on?'#5aa7e8':'#2a3a4c'}"></div>`, iconSize:[14,12]})})
+          border-bottom:12px solid ${on?'#5aa7e8':'#2a3a4c'}"></div>`, iconSize:[14,12]})}))
         .bindPopup(`<b>${esc(e.name||e.entity_id)}</b><br>${esc(e.county)} County<br>${on?'staging here':'not used'}`).addTo(layer);
     } else if(e.kind === 'road_event' && e.status === 'closed'){
       L.circleMarker([e.lat, e.lon], {radius:5, color:'#d9544d', weight:2, fillOpacity:0})
